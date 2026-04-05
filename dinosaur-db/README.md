@@ -1,8 +1,3 @@
-
-# 🦕 Amb_dinosaurios
-
-Challenge para evaluar capacidad del programador para diseñar y desarrollar una solución robusta , escalable y bien estructurada
-
 # 🦕 Challenge Froneus — Infraestructura de Base de Datos
 
 Stack de base de datos para el microservicio de gestión de dinosaurios.
