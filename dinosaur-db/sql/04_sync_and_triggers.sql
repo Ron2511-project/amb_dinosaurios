@@ -41,7 +41,6 @@ AS $$
 BEGIN
     INSERT INTO dinosaurs_read (
         id,
-        code,
         name,
         species,
         status,
@@ -52,7 +51,6 @@ BEGIN
     )
     VALUES (
         NEW.id,
-        NEW.code,
         NEW.name,
         NEW.species,
         NEW.status::TEXT,
@@ -63,7 +61,6 @@ BEGIN
     )
     ON CONFLICT (id) DO UPDATE
         SET
-            code             = EXCLUDED.code,
             name             = EXCLUDED.name,
             species          = EXCLUDED.species,
             status           = EXCLUDED.status,
@@ -77,7 +74,7 @@ END;
 $$;
 
 COMMENT ON FUNCTION sync_dinosaurs_read() IS
-    'Sincroniza write → read model (CQRS). Propaga code, calcula is_extinct y dinosaur_summary.';
+    'Sincroniza write → read model (CQRS). Calcula is_extinct y dinosaur_summary.';
 
 DROP TRIGGER IF EXISTS trg_dinosaurs_sync ON dinosaurs_write;
 

@@ -6,42 +6,26 @@
 -- =============================================================================
 
 CREATE TABLE IF NOT EXISTS dinosaurs_read (
-    -- Mismo UUID que en dinosaurs_write
-    id                  UUID        PRIMARY KEY,
-
-    -- Identificador legible propagado desde write model
-    -- Ejemplo: dino-6934b86b-324c-45d4-93f5-d5f025e8fb7b
-    code                TEXT,
+    -- Mismo id BIGINT que en dinosaurs_write
+    id                  BIGINT      PRIMARY KEY,
 
     name                TEXT,
     species             TEXT,
-
-    -- Status como TEXT para flexibilidad en el Query Side
     status              TEXT,
-
-    -- Campo derivado: true si status = 'EXTINCT'
     is_extinct          BOOLEAN,
-
-    -- Campo pre-calculado: "nombre - especie"
     dinosaur_summary    TEXT,
-
     created_at          TIMESTAMPTZ,
     deleted_at          TIMESTAMPTZ
 );
 
-COMMENT ON TABLE  dinosaurs_read                    IS 'Read model (Query Side CQRS). Sincronizado via trigger desde dinosaurs_write.';
-COMMENT ON COLUMN dinosaurs_read.code               IS 'Identificador legible: dino-{uuid}. Propagado desde write model.';
-COMMENT ON COLUMN dinosaurs_read.is_extinct         IS 'Campo derivado. true cuando status = EXTINCT.';
-COMMENT ON COLUMN dinosaurs_read.dinosaur_summary   IS 'Concatenación pre-calculada: name || '' - '' || species.';
+COMMENT ON TABLE  dinosaurs_read                  IS 'Read model (Query Side CQRS). Sincronizado via trigger desde dinosaurs_write.';
+COMMENT ON COLUMN dinosaurs_read.id               IS 'Mismo ID autoincremental que dinosaurs_write.';
+COMMENT ON COLUMN dinosaurs_read.is_extinct       IS 'Campo derivado. true cuando status = EXTINCT.';
+COMMENT ON COLUMN dinosaurs_read.dinosaur_summary IS 'Concatenación pre-calculada: name || '' - '' || species.';
 
 -- -----------------------------------------------------------------------------
 -- ÍNDICES — dinosaurs_read
 -- -----------------------------------------------------------------------------
-
--- Búsqueda por code (identificador público)
-CREATE UNIQUE INDEX IF NOT EXISTS uq_dr_code
-    ON dinosaurs_read (code);
-
 CREATE INDEX IF NOT EXISTS idx_dr_status
     ON dinosaurs_read (status);
 
