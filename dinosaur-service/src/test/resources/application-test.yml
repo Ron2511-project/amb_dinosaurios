@@ -1,0 +1,8 @@
+# Configuración específica para tests de integración
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: none   # El schema lo crea test-init.sql via withInitScript
+    show-sql: true
+  flyway:
+    enabled: false
