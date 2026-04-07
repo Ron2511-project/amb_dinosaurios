@@ -1,7 +1,6 @@
 package com.froneus.dinosaur.infrastructure.exception;
 
-import com.froneus.dinosaur.domain.exception.DuplicateDinosaurNameException;
-import com.froneus.dinosaur.domain.exception.InvalidDinosaurDateException;
+import com.froneus.dinosaur.domain.exception.*;
 import com.froneus.dinosaur.infrastructure.adapter.in.web.dto.ErrorResponse;
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import org.slf4j.Logger;
@@ -13,21 +12,12 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-/**
- * Manejo centralizado de excepciones.
- * Todos los errores devuelven el mismo formato: { "status": N, "message": "..." }
- *
- * Jerarquía de responses:
- *   400 → errores de negocio / validación
- *   500 → errores internos inesperados
- *   503 → Circuit Breaker abierto (infraestructura no disponible)
- */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-    // ── 400 — Errores de negocio ───────────────────────────────────────────────
+    // ── 400 — Business validation errors ──────────────────────────────────────
 
     @ExceptionHandler(DuplicateDinosaurNameException.class)
     public ResponseEntity<ErrorResponse> handleDuplicate(DuplicateDinosaurNameException ex) {
@@ -39,37 +29,46 @@ public class GlobalExceptionHandler {
         return error(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
+    @ExceptionHandler(DinosaurExtinctException.class)
+    public ResponseEntity<ErrorResponse> handleExtinct(DinosaurExtinctException ex) {
+        return error(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorResponse> handleMalformedJson(HttpMessageNotReadableException ex) {
-        return error(HttpStatus.BAD_REQUEST, "El cuerpo de la petición es inválido");
+        return error(HttpStatus.BAD_REQUEST, "Request body is invalid");
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException ex) {
-        return error(HttpStatus.BAD_REQUEST, "El cuerpo de la petición es inválido");
+        return error(HttpStatus.BAD_REQUEST, "Request body is invalid");
     }
 
-    // ── 503 — Circuit Breaker abierto ─────────────────────────────────────────
+    // ── 404 — Not found ───────────────────────────────────────────────────────
+
+    @ExceptionHandler(DinosaurNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleNotFound(DinosaurNotFoundException ex) {
+        return error(HttpStatus.NOT_FOUND, ex.getMessage());
+    }
+
+    // ── 503 — Circuit Breaker open ────────────────────────────────────────────
 
     @ExceptionHandler(CallNotPermittedException.class)
     public ResponseEntity<ErrorResponse> handleCircuitBreakerOpen(CallNotPermittedException ex) {
-        log.warn("Circuit Breaker OPEN — request rejected: {}", ex.getMessage());
+        log.warn("Circuit Breaker OPEN: {}", ex.getMessage());
         return error(HttpStatus.SERVICE_UNAVAILABLE,
-                "Servicio temporalmente no disponible. Intente nuevamente.");
+                "Service temporarily unavailable. Please try again.");
     }
 
-    // ── 500 — Error genérico ───────────────────────────────────────────────────
+    // ── 500 — Unexpected error ────────────────────────────────────────────────
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneric(Exception ex) {
         log.error("Unexpected error: {}", ex.getMessage(), ex);
-        return error(HttpStatus.INTERNAL_SERVER_ERROR, "Error interno al crear el dinosaurio");
+        return error(HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error");
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-
     private ResponseEntity<ErrorResponse> error(HttpStatus status, String message) {
-        return ResponseEntity.status(status)
-                .body(new ErrorResponse(status.value(), message));
+        return ResponseEntity.status(status).body(new ErrorResponse(status.value(), message));
     }
 }

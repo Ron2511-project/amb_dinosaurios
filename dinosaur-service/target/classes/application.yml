@@ -40,6 +40,21 @@ spring:
           max-idle: 8
           min-idle: 0
 
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+    virtual-host: /
+    listener:
+      simple:
+        acknowledge-mode: auto
+        retry:
+          enabled: true
+          initial-interval: 1000ms
+          max-attempts: 3
+          multiplier: 2.0
+
   jackson:
     serialization:
       write-dates-as-timestamps: false
@@ -62,7 +77,6 @@ resilience4j:
         wait-duration-in-open-state: 10s
         failure-rate-threshold: 50
         event-consumer-buffer-size: 10
-        # Solo fallos reales de infraestructura abren el circuito
         record-exceptions:
           - java.sql.SQLException
           - java.net.ConnectException
@@ -78,3 +92,14 @@ management:
   endpoint:
     health:
       show-details: always
+
+# Scheduler — cron cada 10 minutos
+scheduler:
+  status-update:
+    cron: "0 0/10 * * * *"
+
+# Outbox Publisher — cada 5 segundos
+outbox:
+  publisher:
+    fixed-delay-ms: 5000
+    batch-size: 50

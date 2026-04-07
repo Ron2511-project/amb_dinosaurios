@@ -1,8 +1,10 @@
 package com.froneus.dinosaur.infrastructure.adapter.out.persistence.mapper;
 
 import com.froneus.dinosaur.domain.model.Dinosaur;
+import com.froneus.dinosaur.domain.model.DinosaurReadModel;
 import com.froneus.dinosaur.domain.model.DinosaurStatus;
 import com.froneus.dinosaur.infrastructure.adapter.out.persistence.entity.DinosaurEntity;
+import com.froneus.dinosaur.infrastructure.adapter.out.persistence.entity.DinosaurReadEntity;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -10,18 +12,17 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 
 /**
- * Mapper entre entidad JPA y entidad de dominio.
+ * Mapper entre entidades JPA y entidades de dominio.
  *
- * Expone toOffset() y toDbStatusString() como métodos públicos
- * para que DinosaurPostgresAdapter los use en la native query.
- *
- * Mapeo de status:
+ * Status mapping:
  *   Dominio ALIVE       → BD "ALIVE"
  *   Dominio ENDANGERED  → BD "INACTIVE"
  *   Dominio EXTINCT     → BD "EXTINCT"
  */
 @Component
 public class DinosaurPersistenceMapper {
+
+    // ── Write model (dinosaurs_write) ─────────────────────────────────────────
 
     public Dinosaur toDomain(DinosaurEntity e) {
         return Dinosaur.reconstitute(
@@ -34,13 +35,28 @@ public class DinosaurPersistenceMapper {
         );
     }
 
-    // ── Métodos públicos usados por DinosaurPostgresAdapter ───────────────────
+    // ── Read model (dinosaurs_read) ───────────────────────────────────────────
+
+    public DinosaurReadModel toReadModel(DinosaurReadEntity e) {
+        return new DinosaurReadModel.Builder()
+                .id(e.getId())
+                .name(e.getName())
+                .species(e.getSpecies())
+                .status(toDomainStatus(e.getStatus()))
+                .isExtinct(Boolean.TRUE.equals(e.getIsExtinct()))
+                .dinosaurSummary(e.getDinosaurSummary())
+                .createdAt(toLocal(e.getCreatedAt()))
+                .build();
+    }
+
+    // ── Conversiones públicas usadas por el Adapter ───────────────────────────
 
     public OffsetDateTime toOffset(LocalDateTime ldt) {
         return ldt == null ? null : ldt.atOffset(ZoneOffset.UTC);
     }
 
     public String toDbStatusString(DinosaurStatus status) {
+        if (status == null) return "ALIVE";
         return switch (status) {
             case ALIVE      -> "ALIVE";
             case ENDANGERED -> "INACTIVE";
@@ -48,7 +64,7 @@ public class DinosaurPersistenceMapper {
         };
     }
 
-    // ── Métodos privados ──────────────────────────────────────────────────────
+    // ── Conversiones privadas ─────────────────────────────────────────────────
 
     private LocalDateTime toLocal(OffsetDateTime odt) {
         return odt == null ? null : odt.toLocalDateTime();

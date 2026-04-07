@@ -64,10 +64,10 @@ public class Dinosaur {
 
     private static void validateDates(LocalDateTime discovery, LocalDateTime extinction) {
         if (discovery == null || extinction == null)
-            throw new InvalidDinosaurDateException("Las fechas de descubrimiento y extinción son requeridas");
+            throw new InvalidDinosaurDateException("Discovery and extinction dates are required");
         if (!discovery.isBefore(extinction))
             throw new InvalidDinosaurDateException(
-                    "La fecha de descubrimiento debe ser menor a la fecha de extinción");
+                    "Discovery date must be earlier than extinction date");
     }
 
     public Long getId()                      { return id; }

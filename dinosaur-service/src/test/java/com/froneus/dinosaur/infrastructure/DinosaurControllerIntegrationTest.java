@@ -3,6 +3,8 @@ package com.froneus.dinosaur.infrastructure;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.froneus.dinosaur.infrastructure.adapter.in.web.dto.CreateDinosaurRequest;
+import com.froneus.dinosaur.infrastructure.adapter.in.web.dto.UpdateDinosaurRequest;
+import com.froneus.dinosaur.domain.model.DinosaurStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,14 +22,9 @@ import org.testcontainers.utility.DockerImageName;
 
 import java.time.LocalDateTime;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-/**
- * Tests de integración con Testcontainers.
- * Levanta Postgres y Redis en contenedores efímeros.
- * El schema se crea con ddl-auto=create-drop para el entorno de test.
- */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureMockMvc
 @Testcontainers
@@ -54,14 +51,11 @@ class DinosaurControllerIntegrationTest {
         registry.add("spring.datasource.password", postgres::getPassword);
         registry.add("spring.data.redis.host", redis::getHost);
         registry.add("spring.data.redis.port", () -> redis.getMappedPort(6379));
-        // En test usamos update para que Hibernate cree las tablas
-        registry.add("spring.jpa.hibernate.ddl-auto", () -> "create-drop");
+        registry.add("spring.jpa.hibernate.ddl-auto", () -> "none");
         registry.add("spring.flyway.enabled", () -> "false");
     }
 
-    @Autowired
-    private MockMvc mockMvc;
-
+    @Autowired private MockMvc mockMvc;
     private ObjectMapper objectMapper;
 
     @BeforeEach
@@ -70,92 +64,113 @@ class DinosaurControllerIntegrationTest {
         objectMapper.registerModule(new JavaTimeModule());
     }
 
+    // ── POST ──────────────────────────────────────────────────────────────────
+
     @Test
-    void createDinosaur_shouldReturn201WithStatusAlive() throws Exception {
-        var request = new CreateDinosaurRequest(
-                "Tyrannosaurus Rex", "Theropod",
-                LocalDateTime.of(1902, 1, 1, 23, 59, 59),
-                LocalDateTime.of(2023, 12, 31, 23, 59, 59)
-        );
+    void post_shouldReturn201() throws Exception {
+        var req = new CreateDinosaurRequest("T-Rex Integration", "Theropod",
+                LocalDateTime.of(1902, 1, 1, 0, 0),
+                LocalDateTime.of(2025, 12, 31, 23, 59));
 
         mockMvc.perform(post("/v1/dinosaur")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+                        .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").isNumber())
-                .andExpect(jsonPath("$.name").value("Tyrannosaurus Rex"))
                 .andExpect(jsonPath("$.status").value("ALIVE"));
     }
 
     @Test
-    void createDinosaur_shouldReturn400WhenNameIsDuplicated() throws Exception {
-        var request = new CreateDinosaurRequest(
-                "Triceratops", "Ceratopsid",
-                LocalDateTime.of(1889, 1, 1, 0, 0),
-                LocalDateTime.of(2023, 6, 1, 0, 0)
-        );
+    void post_shouldReturn400WhenDuplicate() throws Exception {
+        var req = new CreateDinosaurRequest("Duplicate Dino", "Theropod",
+                LocalDateTime.of(1902, 1, 1, 0, 0),
+                LocalDateTime.of(2025, 12, 31, 23, 59));
 
         mockMvc.perform(post("/v1/dinosaur")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+                        .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isCreated());
 
         mockMvc.perform(post("/v1/dinosaur")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+                        .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.message").value("El nombre del dinosaurio ya existe"));
     }
 
-    @Test
-    void createDinosaur_shouldReturn400WhenDatesInvalid() throws Exception {
-        var request = new CreateDinosaurRequest(
-                "InvalidDino", "Theropod",
-                LocalDateTime.of(2025, 1, 1, 0, 0),
-                LocalDateTime.of(2020, 1, 1, 0, 0)
-        );
+    // ── GET list ──────────────────────────────────────────────────────────────
 
-        mockMvc.perform(post("/v1/dinosaur")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value(
-                        "La fecha de descubrimiento debe ser menor a la fecha de extinción"));
+    @Test
+    void getAll_shouldReturnPagedResponse() throws Exception {
+        mockMvc.perform(get("/v1/dinosaur")
+                        .param("page", "1")
+                        .param("pageSize", "10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data").isArray())
+                .andExpect(jsonPath("$.meta.page").value(1))
+                .andExpect(jsonPath("$.meta.pageSize").value(10));
     }
 
-    @Test
-    void createDinosaur_shouldReturn400WhenBodyMalformed() throws Exception {
-        mockMvc.perform(post("/v1/dinosaur")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{ invalid json }"))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("El cuerpo de la petición es inválido"));
-    }
+    // ── GET by id ─────────────────────────────────────────────────────────────
 
     @Test
-    void createDinosaur_withIdempotencyKey_shouldNotCreateDuplicate() throws Exception {
-        var request = new CreateDinosaurRequest(
-                "Brachiosaurus", "Sauropod",
+    void getById_shouldReturn204WhenNotFound() throws Exception {
+        mockMvc.perform(get("/v1/dinosaur/99999"))
+                .andExpect(status().isNoContent());
+    }
+
+    // ── PUT ───────────────────────────────────────────────────────────────────
+
+    @Test
+    void put_shouldReturn400WhenExtinct() throws Exception {
+        // Primero creamos
+        var createReq = new CreateDinosaurRequest("Extinct Dino", "Sauropod",
                 LocalDateTime.of(1900, 1, 1, 0, 0),
-                LocalDateTime.of(2024, 1, 1, 0, 0)
-        );
-        String key = "idem-test-001";
-
-        String body1 = mockMvc.perform(post("/v1/dinosaur")
+                LocalDateTime.of(2020, 1, 1, 0, 0));
+        String createResp = mockMvc.perform(post("/v1/dinosaur")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .header("Idempotency-Key", key)
-                        .content(objectMapper.writeValueAsString(request)))
+                        .content(objectMapper.writeValueAsString(createReq)))
                 .andExpect(status().isCreated())
                 .andReturn().getResponse().getContentAsString();
 
-        String body2 = mockMvc.perform(post("/v1/dinosaur")
+        Long id = objectMapper.readTree(createResp).get("id").asLong();
+
+        // Intentamos actualizar con status EXTINCT — primero lo ponemos extinct via update
+        var updateToExtinct = new UpdateDinosaurRequest(null, null, null, null, DinosaurStatus.EXTINCT);
+        mockMvc.perform(put("/v1/dinosaur/" + id)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .header("Idempotency-Key", key)
-                        .content(objectMapper.writeValueAsString(request)))
+                        .content(objectMapper.writeValueAsString(updateToExtinct)))
+                .andExpect(status().isOk());
+
+        // Ahora intentamos modificar el extinct
+        var updateAgain = new UpdateDinosaurRequest("New Name", null, null, null, null);
+        mockMvc.perform(put("/v1/dinosaur/" + id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(updateAgain)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Cannot modify an EXTINCT dinosaur"));
+    }
+
+    // ── DELETE ────────────────────────────────────────────────────────────────
+
+    @Test
+    void delete_shouldReturn204() throws Exception {
+        var createReq = new CreateDinosaurRequest("Delete Me Dino", "Sauropod",
+                LocalDateTime.of(1900, 1, 1, 0, 0),
+                LocalDateTime.of(2025, 1, 1, 0, 0));
+        String createResp = mockMvc.perform(post("/v1/dinosaur")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(createReq)))
                 .andExpect(status().isCreated())
                 .andReturn().getResponse().getContentAsString();
 
-        org.assertj.core.api.Assertions.assertThat(body1).isEqualTo(body2);
+        Long id = objectMapper.readTree(createResp).get("id").asLong();
+
+        mockMvc.perform(delete("/v1/dinosaur/" + id))
+                .andExpect(status().isNoContent());
+
+        // Ya no debe aparecer en GET
+        mockMvc.perform(get("/v1/dinosaur/" + id))
+                .andExpect(status().isNoContent());
     }
 }

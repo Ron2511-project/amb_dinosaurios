@@ -8,17 +8,17 @@ import java.time.LocalDateTime;
 
 public record CreateDinosaurRequest(
 
-        @NotBlank(message = "El nombre es requerido")
+        @NotBlank(message = "Name is required")
         String name,
 
-        @NotBlank(message = "La especie es requerida")
+        @NotBlank(message = "Species is required")
         String species,
 
-        @NotNull(message = "La fecha de descubrimiento es requerida")
+        @NotNull(message = "Discovery date is required")
         @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
         LocalDateTime discoveryDate,
 
-        @NotNull(message = "La fecha de extinción es requerida")
+        @NotNull(message = "Extinction date is required")
         @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
         LocalDateTime extinctionDate
 ) {}

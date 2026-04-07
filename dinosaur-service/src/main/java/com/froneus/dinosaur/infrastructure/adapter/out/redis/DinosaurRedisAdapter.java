@@ -8,18 +8,9 @@ import java.time.Duration;
 import java.util.Optional;
 
 /**
- * Adaptador de salida: idempotencia en Redis.
- *
- * Convención alineada con redis_idempotency_reference.md:
- *   Header:    Idempotency-Key: idem-{uuid}
- *   Key Redis: idempotency:idem-{uuid}
- *   Valor:     dinosaurId (Long como String)
- *   TTL:       86400s (24 horas)
- *
- * Flujo:
- *   1. Controller recibe header Idempotency-Key
- *   2. Consulta Redis → si existe devuelve respuesta cacheada
- *   3. Si no existe → crea en Postgres → guarda en Redis
+ * Adaptador Redis para idempotencia.
+ * Key: "idempotency:idem-{uuid}" → dinosaurId (Long)
+ * TTL: 24 horas
  */
 @Component
 public class DinosaurRedisAdapter implements DinosaurIdempotencyPort {
@@ -34,20 +25,19 @@ public class DinosaurRedisAdapter implements DinosaurIdempotencyPort {
     }
 
     @Override
-    public boolean exists(String idempotencyKey) {
-        return Boolean.TRUE.equals(redisTemplate.hasKey(buildKey(idempotencyKey)));
+    public boolean exists(String key) {
+        return Boolean.TRUE.equals(redisTemplate.hasKey(buildKey(key)));
     }
 
     @Override
-    public void store(String idempotencyKey, Long dinosaurId) {
-        redisTemplate.opsForValue()
-                .set(buildKey(idempotencyKey), String.valueOf(dinosaurId), TTL);
+    public void store(String key, Long dinosaurId) {
+        redisTemplate.opsForValue().set(buildKey(key), String.valueOf(dinosaurId), TTL);
     }
 
     @Override
-    public Optional<Long> getDinosaurId(String idempotencyKey) {
-        String value = redisTemplate.opsForValue().get(buildKey(idempotencyKey));
-        return Optional.ofNullable(value).map(Long::parseLong);
+    public Optional<Long> getDinosaurId(String key) {
+        String val = redisTemplate.opsForValue().get(buildKey(key));
+        return Optional.ofNullable(val).map(Long::parseLong);
     }
 
     private String buildKey(String key) {
