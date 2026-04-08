@@ -1,0 +1,164 @@
+# =============================================================================
+# AMB_DINOSAURIOS — docker-compose.yml raíz
+# Levanta todo el stack: docker compose up --build
+#
+# Servicios:
+#   postgres         → PostgreSQL 16 (CQRS: write + read model + triggers)
+#   redis            → Redis 7 (idempotencia + Outbox de eventos)
+#   rabbitmq         → RabbitMQ 3 (mensajería de eventos de estado)
+#   dinosaur-service → Microservicio Java Spring Boot
+#   pgadmin          → UI PostgreSQL  (--profile tools)
+# =============================================================================
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # POSTGRESQL 16
+  # ---------------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: froneus_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER:     ${POSTGRES_USER:-froneus}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-froneus_pass}
+      POSTGRES_DB:       ${POSTGRES_DB:-froneus_db}
+      PGDATA:            /var/lib/postgresql/data/pgdata
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - ./dinosaur-db/sql/01_postgres_setup.sql:/docker-entrypoint-initdb.d/01_postgres_setup.sql:ro
+      - ./dinosaur-db/sql/02_write_model.sql:/docker-entrypoint-initdb.d/02_write_model.sql:ro
+      - ./dinosaur-db/sql/03_read_model.sql:/docker-entrypoint-initdb.d/03_read_model.sql:ro
+      - ./dinosaur-db/sql/04_sync_and_triggers.sql:/docker-entrypoint-initdb.d/04_sync_and_triggers.sql:ro
+      - ./dinosaur-db/sql/05_seed_data.sql:/docker-entrypoint-initdb.d/05_seed_data.sql:ro
+      - ./dinosaur-db/sql/07_messages_table.sql:/docker-entrypoint-initdb.d/07_messages_table.sql:ro
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-froneus} -d ${POSTGRES_DB:-froneus_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    networks:
+      - froneus_net
+
+  # ---------------------------------------------------------------------------
+  # REDIS 7 — Idempotencia + Outbox de eventos
+  # ---------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: froneus_redis
+    restart: unless-stopped
+    command: redis-server /usr/local/etc/redis/redis.conf
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - ./dinosaur-db/redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+    networks:
+      - froneus_net
+
+  # ---------------------------------------------------------------------------
+  # RABBITMQ 3 — Mensajería de eventos de dinosaurios
+  # UI de gestión: http://localhost:15672  (guest/guest)
+  # ---------------------------------------------------------------------------
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: froneus_rabbitmq
+    restart: unless-stopped
+    ports:
+      - "${RABBITMQ_PORT:-5672}:5672"       # AMQP
+      - "15672:15672"                         # Management UI
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    networks:
+      - froneus_net
+
+  # ---------------------------------------------------------------------------
+  # DINOSAUR SERVICE — Microservicio Java Spring Boot
+  # ---------------------------------------------------------------------------
+  dinosaur-service:
+    build:
+      context: ./dinosaur-service
+      dockerfile: Dockerfile
+    container_name: dinosaur_service
+    restart: on-failure
+    ports:
+      - "8080:8080"
+    environment:
+      DB_HOST:             postgres
+      DB_PORT:             5432
+      DB_NAME:             ${POSTGRES_DB:-froneus_db}
+      DB_USER:             ${POSTGRES_USER:-froneus}
+      DB_PASSWORD:         ${POSTGRES_PASSWORD:-froneus_pass}
+      REDIS_HOST:          redis
+      REDIS_PORT:          ${REDIS_PORT:-6379}
+      RABBITMQ_HOST:       rabbitmq
+      RABBITMQ_PORT:       5672
+      RABBITMQ_USER:       ${RABBITMQ_USER:-guest}
+      RABBITMQ_PASSWORD:   ${RABBITMQ_PASSWORD:-guest}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    networks:
+      - froneus_net
+
+  # ---------------------------------------------------------------------------
+  # PGADMIN 4 — opcional: docker compose --profile tools up
+  # ---------------------------------------------------------------------------
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: froneus_pgadmin
+    restart: unless-stopped
+    profiles:
+      - tools
+    environment:
+      PGADMIN_DEFAULT_EMAIL:    admin@froneus.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - froneus_net
+
+# =============================================================================
+volumes:
+  postgres_data:
+    name: froneus_postgres_data
+  redis_data:
+    name: froneus_redis_data
+  rabbitmq_data:
+    name: froneus_rabbitmq_data
+
+networks:
+  froneus_net:
+    name: froneus_network
+    driver: bridge
