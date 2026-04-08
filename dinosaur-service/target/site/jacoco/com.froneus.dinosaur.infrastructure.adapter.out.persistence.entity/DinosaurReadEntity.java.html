@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DinosaurReadEntity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">dinosaur-service</a> &gt; <a href="index.source.html" class="el_package">com.froneus.dinosaur.infrastructure.adapter.out.persistence.entity</a> &gt; <span class="el_source">DinosaurReadEntity.java</span></div><h1>DinosaurReadEntity.java</h1><pre class="source lang-java linenums">package com.froneus.dinosaur.infrastructure.adapter.out.persistence.entity;
+
+import jakarta.persistence.*;
+import java.time.OffsetDateTime;
+
+/**
+ * Entidad JPA mapeada a dinosaurs_read (Query Side CQRS).
+ * Solo lectura — nunca se hace INSERT/UPDATE desde Java.
+ * El trigger sync_dinosaurs_read la mantiene actualizada automáticamente.
+ */
+@Entity
+@Table(name = &quot;dinosaurs_read&quot;)
+<span class="nc" id="L13">public class DinosaurReadEntity {</span>
+
+    @Id
+    private Long id;
+
+    @Column
+    private String name;
+
+    @Column
+    private String species;
+
+    @Column
+    private String status;
+
+    @Column(name = &quot;is_extinct&quot;)
+    private Boolean isExtinct;
+
+    @Column(name = &quot;dinosaur_summary&quot;)
+    private String dinosaurSummary;
+
+    @Column(name = &quot;created_at&quot;)
+    private OffsetDateTime createdAt;
+
+    @Column(name = &quot;deleted_at&quot;)
+    private OffsetDateTime deletedAt;
+
+<span class="nc" id="L39">    public Long          getId()              { return id; }</span>
+<span class="nc" id="L40">    public String        getName()            { return name; }</span>
+<span class="nc" id="L41">    public String        getSpecies()         { return species; }</span>
+<span class="nc" id="L42">    public String        getStatus()          { return status; }</span>
+<span class="nc" id="L43">    public Boolean       getIsExtinct()       { return isExtinct; }</span>
+<span class="nc" id="L44">    public String        getDinosaurSummary() { return dinosaurSummary; }</span>
+<span class="nc" id="L45">    public OffsetDateTime getCreatedAt()      { return createdAt; }</span>
+<span class="nc" id="L46">    public OffsetDateTime getDeletedAt()      { return deletedAt; }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Dinosaur.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">dinosaur-service</a> &gt; <a href="index.source.html" class="el_package">com.froneus.dinosaur.domain.model</a> &gt; <span class="el_source">Dinosaur.java</span></div><h1>Dinosaur.java</h1><pre class="source lang-java linenums">package com.froneus.dinosaur.domain.model;
+
+import com.froneus.dinosaur.domain.exception.InvalidDinosaurDateException;
+
+import java.time.LocalDateTime;
+
+/**
+ * Entidad de dominio Dinosaur — inmutable, sin dependencias de framework.
+ *
+ * Adaptada a la BD existente con arquitectura CQRS:
+ *   - Tabla:  dinosaurs_write (Command Side)
+ *   - ID:     BIGSERIAL autoincremental generado por PostgreSQL (Long)
+ *   - Status: ALIVE | ENDANGERED (→ INACTIVE en BD) | EXTINCT
+ */
+public class Dinosaur {
+
+    private final Long id;               // BIGSERIAL — null al crear, asignado por BD
+    private final String name;
+    private final String species;
+    private final LocalDateTime discoveryDate;
+    private final LocalDateTime extinctionDate;
+    private final DinosaurStatus status;
+
+<span class="fc" id="L24">    private Dinosaur(Builder b) {</span>
+<span class="fc" id="L25">        this.id             = b.id;</span>
+<span class="fc" id="L26">        this.name           = b.name;</span>
+<span class="fc" id="L27">        this.species        = b.species;</span>
+<span class="fc" id="L28">        this.discoveryDate  = b.discoveryDate;</span>
+<span class="fc" id="L29">        this.extinctionDate = b.extinctionDate;</span>
+<span class="fc" id="L30">        this.status         = b.status;</span>
+<span class="fc" id="L31">    }</span>
+
+    /**
+     * Factory para creación nueva.
+     * Siempre status ALIVE (regla de negocio).
+     * ID es null — lo genera PostgreSQL con BIGSERIAL.
+     */
+    public static Dinosaur create(String name, String species,
+                                  LocalDateTime discoveryDate,
+                                  LocalDateTime extinctionDate) {
+<span class="fc" id="L41">        validateDates(discoveryDate, extinctionDate);</span>
+<span class="fc" id="L42">        return new Builder()</span>
+<span class="fc" id="L43">                .id(null)</span>
+<span class="fc" id="L44">                .name(name)</span>
+<span class="fc" id="L45">                .species(species)</span>
+<span class="fc" id="L46">                .discoveryDate(discoveryDate)</span>
+<span class="fc" id="L47">                .extinctionDate(extinctionDate)</span>
+<span class="fc" id="L48">                .status(DinosaurStatus.ALIVE)</span>
+<span class="fc" id="L49">                .build();</span>
+    }
+
+    /**
+     * Factory para reconstitución desde persistencia.
+     */
+    public static Dinosaur reconstitute(Long id, String name, String species,
+                                        LocalDateTime discoveryDate,
+                                        LocalDateTime extinctionDate,
+                                        DinosaurStatus status) {
+<span class="fc" id="L59">        return new Builder()</span>
+<span class="fc" id="L60">                .id(id).name(name).species(species)</span>
+<span class="fc" id="L61">                .discoveryDate(discoveryDate).extinctionDate(extinctionDate)</span>
+<span class="fc" id="L62">                .status(status).build();</span>
+    }
+
+    private static void validateDates(LocalDateTime discovery, LocalDateTime extinction) {
+<span class="fc bfc" id="L66" title="All 4 branches covered.">        if (discovery == null || extinction == null)</span>
+<span class="fc" id="L67">            throw new InvalidDinosaurDateException(&quot;Discovery and extinction dates are required&quot;);</span>
+<span class="fc bfc" id="L68" title="All 2 branches covered.">        if (!discovery.isBefore(extinction))</span>
+<span class="fc" id="L69">            throw new InvalidDinosaurDateException(</span>
+                    &quot;Discovery date must be earlier than extinction date&quot;);
+<span class="fc" id="L71">    }</span>
+
+<span class="fc" id="L73">    public Long getId()                      { return id; }</span>
+<span class="fc" id="L74">    public String getName()                  { return name; }</span>
+<span class="fc" id="L75">    public String getSpecies()               { return species; }</span>
+<span class="fc" id="L76">    public LocalDateTime getDiscoveryDate()  { return discoveryDate; }</span>
+<span class="fc" id="L77">    public LocalDateTime getExtinctionDate() { return extinctionDate; }</span>
+<span class="fc" id="L78">    public DinosaurStatus getStatus()        { return status; }</span>
+
+<span class="fc" id="L80">    public static class Builder {</span>
+        private Long id;
+        private String name, species;
+        private LocalDateTime discoveryDate, extinctionDate;
+        private DinosaurStatus status;
+
+<span class="fc" id="L86">        public Builder id(Long v)                    { id = v; return this; }</span>
+<span class="fc" id="L87">        public Builder name(String v)                { name = v; return this; }</span>
+<span class="fc" id="L88">        public Builder species(String v)             { species = v; return this; }</span>
+<span class="fc" id="L89">        public Builder discoveryDate(LocalDateTime v){ discoveryDate = v; return this; }</span>
+<span class="fc" id="L90">        public Builder extinctionDate(LocalDateTime v){ extinctionDate = v; return this; }</span>
+<span class="fc" id="L91">        public Builder status(DinosaurStatus v)      { status = v; return this; }</span>
+<span class="fc" id="L92">        public Dinosaur build()                      { return new Dinosaur(this); }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

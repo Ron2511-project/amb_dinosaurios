@@ -71,7 +71,7 @@ com.froneus.dinosaur/
 
 ```bash
 # Unitarios (sin Docker)
-mvn test -Dtest="DinosaurTest,CreateDinosaurServiceTest"
+mvn -Dtest='*Test,!*IntegrationTest' test
 
 # Integración (requiere Docker para Testcontainers)
 mvn test -Dtest="DinosaurControllerIntegrationTest"

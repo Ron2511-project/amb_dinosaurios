@@ -1,0 +1,5 @@
+com/froneus/dinosaur/application/UpdateDinosaurStatusServiceTest.class
+com/froneus/dinosaur/application/DeleteDinosaurServiceTest.class
+com/froneus/dinosaur/domain/DinosaurTest.class
+com/froneus/dinosaur/application/GetDinosaurServiceTest.class
+com/froneus/dinosaur/application/CreateDinosaurServiceTest.class

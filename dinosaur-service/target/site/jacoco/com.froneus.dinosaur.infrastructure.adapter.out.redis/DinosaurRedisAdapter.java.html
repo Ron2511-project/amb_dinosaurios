@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DinosaurRedisAdapter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">dinosaur-service</a> &gt; <a href="index.source.html" class="el_package">com.froneus.dinosaur.infrastructure.adapter.out.redis</a> &gt; <span class="el_source">DinosaurRedisAdapter.java</span></div><h1>DinosaurRedisAdapter.java</h1><pre class="source lang-java linenums">package com.froneus.dinosaur.infrastructure.adapter.out.redis;
+
+import com.froneus.dinosaur.domain.port.out.DinosaurIdempotencyPort;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.stereotype.Component;
+
+import java.time.Duration;
+import java.util.Optional;
+
+/**
+ * Adaptador Redis para idempotencia.
+ *
+ * Estructura en Redis:
+ *   Key:   idempotency:idem-{uuid}
+ *   Value: dinosaurId como String (ej: &quot;21&quot;)
+ *   TTL:   24 horas
+ *
+ * Ejemplo:
+ *   Key:   idempotency:idem-a1b2c3d4-0001-0001-0001-ef1234567890
+ *   Value: &quot;21&quot;
+ *   TTL:   86400 segundos
+ *
+ * Verificar desde terminal:
+ *   redis-cli GET &quot;idempotency:idem-a1b2c3d4-0001-0001-0001-ef1234567890&quot;
+ *   → &quot;21&quot;
+ *
+ *   redis-cli TTL &quot;idempotency:idem-a1b2c3d4-0001-0001-0001-ef1234567890&quot;
+ *   → 86352 (segundos restantes)
+ */
+@Component
+public class DinosaurRedisAdapter implements DinosaurIdempotencyPort {
+
+<span class="nc" id="L35">    private static final Logger   log        = LoggerFactory.getLogger(DinosaurRedisAdapter.class);</span>
+    private static final String   KEY_PREFIX = &quot;idempotency:&quot;;
+<span class="nc" id="L37">    private static final Duration TTL        = Duration.ofHours(24);</span>
+
+    private final StringRedisTemplate redisTemplate;
+
+<span class="nc" id="L41">    public DinosaurRedisAdapter(StringRedisTemplate redisTemplate) {</span>
+<span class="nc" id="L42">        this.redisTemplate = redisTemplate;</span>
+<span class="nc" id="L43">    }</span>
+
+    @Override
+    public boolean exists(String key) {
+<span class="nc" id="L47">        return Boolean.TRUE.equals(redisTemplate.hasKey(buildKey(key)));</span>
+    }
+
+    @Override
+    public void store(String key, Long dinosaurId) {
+<span class="nc" id="L52">        String redisKey = buildKey(key);</span>
+<span class="nc" id="L53">        redisTemplate.opsForValue().set(redisKey, String.valueOf(dinosaurId), TTL);</span>
+<span class="nc" id="L54">        log.info(&quot;Idempotency stored — key={} dinosaurId={} ttl=24h&quot;, redisKey, dinosaurId);</span>
+<span class="nc" id="L55">    }</span>
+
+    @Override
+    public Optional&lt;Long&gt; getDinosaurId(String key) {
+<span class="nc" id="L59">        String val = redisTemplate.opsForValue().get(buildKey(key));</span>
+<span class="nc bnc" id="L60" title="All 2 branches missed.">        if (val != null) {</span>
+<span class="nc" id="L61">            log.info(&quot;Idempotency hit — key={} dinosaurId={}&quot;, buildKey(key), val);</span>
+        }
+<span class="nc" id="L63">        return Optional.ofNullable(val).map(Long::parseLong);</span>
+    }
+
+    private String buildKey(String key) {
+<span class="nc" id="L67">        return KEY_PREFIX + key;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

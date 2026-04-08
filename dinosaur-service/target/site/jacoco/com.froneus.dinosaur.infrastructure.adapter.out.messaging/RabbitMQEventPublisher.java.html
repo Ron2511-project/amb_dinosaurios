@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RabbitMQEventPublisher.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">dinosaur-service</a> &gt; <a href="index.source.html" class="el_package">com.froneus.dinosaur.infrastructure.adapter.out.messaging</a> &gt; <span class="el_source">RabbitMQEventPublisher.java</span></div><h1>RabbitMQEventPublisher.java</h1><pre class="source lang-java linenums">package com.froneus.dinosaur.infrastructure.adapter.out.messaging;
+
+import com.froneus.dinosaur.domain.model.DinosaurEvent;
+import com.froneus.dinosaur.domain.port.out.DinosaurEventPublisherPort;
+import com.froneus.dinosaur.infrastructure.config.RabbitMQConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.stereotype.Component;
+
+/**
+ * Adaptador de salida: publica eventos en RabbitMQ.
+ *
+ * Exchange: dinosaur.exchange (topic)
+ * Routing key: dinosaur.status.{eventType}
+ *
+ * Ejemplos de routing keys generadas:
+ *   dinosaur.status.CREATED          → POST exitoso
+ *   dinosaur.status.STATUS_CHANGED   → PUT con cambio de status
+ *   dinosaur.status.DELETED          → DELETE
+ *   dinosaur.status.SCHEDULER_UPDATE → scheduler automático
+ *
+ * El JSON publicado tiene el formato del challenge (punto III):
+ * {
+ *   &quot;dinosaurId&quot;: 21,
+ *   &quot;newStatus&quot;:  &quot;ALIVE&quot;,
+ *   &quot;timestamp&quot;:  &quot;2026-04-07T10:30:00&quot;,
+ *   &quot;eventType&quot;:  &quot;CREATED&quot;
+ * }
+ */
+@Component
+public class RabbitMQEventPublisher implements DinosaurEventPublisherPort {
+
+<span class="nc" id="L34">    private static final Logger log = LoggerFactory.getLogger(RabbitMQEventPublisher.class);</span>
+
+    private final RabbitTemplate rabbitTemplate;
+
+<span class="nc" id="L38">    public RabbitMQEventPublisher(RabbitTemplate rabbitTemplate) {</span>
+<span class="nc" id="L39">        this.rabbitTemplate = rabbitTemplate;</span>
+<span class="nc" id="L40">    }</span>
+
+    @Override
+    public void publish(DinosaurEvent event) {
+<span class="nc" id="L44">        String routingKey = &quot;dinosaur.status.&quot; + event.eventType().name();</span>
+
+<span class="nc" id="L46">        rabbitTemplate.convertAndSend(</span>
+                RabbitMQConfig.EXCHANGE_NAME,
+                routingKey,
+                event
+        );
+
+<span class="nc" id="L52">        log.info(&quot;Event published to RabbitMQ — exchange={} routingKey={} dinosaurId={} newStatus={}&quot;,</span>
+                RabbitMQConfig.EXCHANGE_NAME, routingKey,
+<span class="nc" id="L54">                event.dinosaurId(), event.newStatus());</span>
+<span class="nc" id="L55">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

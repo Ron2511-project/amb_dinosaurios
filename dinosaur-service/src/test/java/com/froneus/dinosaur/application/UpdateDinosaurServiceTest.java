@@ -1,16 +1,16 @@
 package com.froneus.dinosaur.application;
 
 import com.froneus.dinosaur.application.usecase.UpdateDinosaurService;
-import com.froneus.dinosaur.domain.exception.DinosaurExtinctException;
 import com.froneus.dinosaur.domain.exception.DinosaurNotFoundException;
-import com.froneus.dinosaur.domain.exception.DuplicateDinosaurNameException;
 import com.froneus.dinosaur.domain.model.Dinosaur;
+import com.froneus.dinosaur.domain.model.DinosaurEvent;
 import com.froneus.dinosaur.domain.model.DinosaurStatus;
 import com.froneus.dinosaur.domain.port.in.UpdateDinosaurUseCase.UpdateDinosaurCommand;
 import com.froneus.dinosaur.domain.port.out.DinosaurEventOutboxPort;
 import com.froneus.dinosaur.domain.port.out.DinosaurRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 import java.time.LocalDateTime;
@@ -37,7 +37,7 @@ class UpdateDinosaurServiceTest {
     }
 
     @Test
-    void execute_shouldUpdateSuccessfully() {
+    void execute_shouldUpdateNameWithoutEmittingEvent() {
         Dinosaur existing = Dinosaur.reconstitute(1L, "T-Rex", "Theropod",
                 DISCOVERY, EXTINCTION, DinosaurStatus.ALIVE);
         when(repository.findById(1L)).thenReturn(Optional.of(existing));
@@ -49,12 +49,12 @@ class UpdateDinosaurServiceTest {
 
         assertThat(result.getName()).isEqualTo("T-Rex Updated");
         verify(repository).update(any());
-        // Status did not change → no event
+        // Status no cambió → NO debe emitir evento
         verify(outbox, never()).store(any());
     }
 
     @Test
-    void execute_shouldStoreEventWhenStatusChanges() {
+    void execute_shouldEmitStatusChangedEventWhenStatusChanges() {
         Dinosaur existing = Dinosaur.reconstitute(1L, "T-Rex", "Theropod",
                 DISCOVERY, EXTINCTION, DinosaurStatus.ALIVE);
         when(repository.findById(1L)).thenReturn(Optional.of(existing));
@@ -64,7 +64,38 @@ class UpdateDinosaurServiceTest {
 
         service.execute(cmd);
 
-        verify(outbox).store(any()); // status changed → event emitted
+        ArgumentCaptor<DinosaurEvent> captor = ArgumentCaptor.forClass(DinosaurEvent.class);
+        verify(outbox).store(captor.capture());
+        assertThat(captor.getValue().eventType()).isEqualTo(DinosaurEvent.EventType.STATUS_CHANGED);
+        assertThat(captor.getValue().newStatus()).isEqualTo(DinosaurStatus.ENDANGERED);
+        assertThat(captor.getValue().dinosaurId()).isEqualTo(1L);
+    }
+
+    @Test
+    void execute_shouldNotEmitEventWhenStatusIsNull() {
+        Dinosaur existing = Dinosaur.reconstitute(1L, "T-Rex", "Theropod",
+                DISCOVERY, EXTINCTION, DinosaurStatus.ALIVE);
+        when(repository.findById(1L)).thenReturn(Optional.of(existing));
+
+        var cmd = new UpdateDinosaurCommand(1L, "T-Rex New Name", null, null, null, null);
+
+        service.execute(cmd);
+
+        verify(outbox, never()).store(any());
+    }
+
+    @Test
+    void execute_shouldNotEmitEventWhenStatusDoesNotChange() {
+        Dinosaur existing = Dinosaur.reconstitute(1L, "T-Rex", "Theropod",
+                DISCOVERY, EXTINCTION, DinosaurStatus.ALIVE);
+        when(repository.findById(1L)).thenReturn(Optional.of(existing));
+
+        var cmd = new UpdateDinosaurCommand(1L, "T-Rex", "Theropod",
+                DISCOVERY, EXTINCTION, DinosaurStatus.ALIVE);
+
+        service.execute(cmd);
+
+        verify(outbox, never()).store(any());
     }
 
     @Test
@@ -77,5 +108,20 @@ class UpdateDinosaurServiceTest {
                 .isInstanceOf(DinosaurNotFoundException.class);
 
         verify(outbox, never()).store(any());
+    }
+
+    @Test
+    void execute_shouldKeepExistingValuesWhenCommandFieldsAreNull() {
+        Dinosaur existing = Dinosaur.reconstitute(1L, "T-Rex", "Theropod",
+                DISCOVERY, EXTINCTION, DinosaurStatus.ALIVE);
+        when(repository.findById(1L)).thenReturn(Optional.of(existing));
+
+        var cmd = new UpdateDinosaurCommand(1L, null, null, null, null, null);
+
+        Dinosaur result = service.execute(cmd);
+
+        assertThat(result.getName()).isEqualTo("T-Rex");
+        assertThat(result.getSpecies()).isEqualTo("Theropod");
+        assertThat(result.getStatus()).isEqualTo(DinosaurStatus.ALIVE);
     }
 }

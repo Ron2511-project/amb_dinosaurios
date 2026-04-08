@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DinosaurEntity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">dinosaur-service</a> &gt; <a href="index.source.html" class="el_package">com.froneus.dinosaur.infrastructure.adapter.out.persistence.entity</a> &gt; <span class="el_source">DinosaurEntity.java</span></div><h1>DinosaurEntity.java</h1><pre class="source lang-java linenums">package com.froneus.dinosaur.infrastructure.adapter.out.persistence.entity;
+
+import jakarta.persistence.*;
+import java.time.OffsetDateTime;
+
+/**
+ * Entidad JPA mapeada a dinosaurs_write.
+ * El campo status se maneja como String simple — el cast al ENUM PostgreSQL
+ * se hace mediante native query en DinosaurJpaRepository.
+ */
+@Entity
+@Table(name = &quot;dinosaurs_write&quot;)
+<span class="nc" id="L13">public class DinosaurEntity {</span>
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false)
+    private String name;
+
+    @Column(nullable = false)
+    private String species;
+
+    @Column(name = &quot;discovery_date&quot;, nullable = false)
+    private OffsetDateTime discoveryDate;
+
+    @Column(name = &quot;extinction_date&quot;)
+    private OffsetDateTime extinctionDate;
+
+    // String simple — el cast ::dinosaur_status lo hace la native query
+    @Column(nullable = false)
+    private String status;
+
+    @Column(name = &quot;created_at&quot;, updatable = false)
+    private OffsetDateTime createdAt;
+
+    @Column(name = &quot;updated_at&quot;)
+    private OffsetDateTime updatedAt;
+
+    @Column(name = &quot;deleted_at&quot;)
+    private OffsetDateTime deletedAt;
+
+<span class="nc" id="L44">    public Long getId()                              { return id; }</span>
+<span class="nc" id="L45">    public void setId(Long id)                       { this.id = id; }</span>
+<span class="nc" id="L46">    public String getName()                          { return name; }</span>
+<span class="nc" id="L47">    public void setName(String name)                 { this.name = name; }</span>
+<span class="nc" id="L48">    public String getSpecies()                       { return species; }</span>
+<span class="nc" id="L49">    public void setSpecies(String species)           { this.species = species; }</span>
+<span class="nc" id="L50">    public OffsetDateTime getDiscoveryDate()         { return discoveryDate; }</span>
+<span class="nc" id="L51">    public void setDiscoveryDate(OffsetDateTime d)   { this.discoveryDate = d; }</span>
+<span class="nc" id="L52">    public OffsetDateTime getExtinctionDate()        { return extinctionDate; }</span>
+<span class="nc" id="L53">    public void setExtinctionDate(OffsetDateTime d)  { this.extinctionDate = d; }</span>
+<span class="nc" id="L54">    public String getStatus()                        { return status; }</span>
+<span class="nc" id="L55">    public void setStatus(String s)                  { this.status = s; }</span>
+<span class="nc" id="L56">    public OffsetDateTime getCreatedAt()             { return createdAt; }</span>
+<span class="nc" id="L57">    public void setCreatedAt(OffsetDateTime d)       { this.createdAt = d; }</span>
+<span class="nc" id="L58">    public OffsetDateTime getUpdatedAt()             { return updatedAt; }</span>
+<span class="nc" id="L59">    public void setUpdatedAt(OffsetDateTime d)       { this.updatedAt = d; }</span>
+<span class="nc" id="L60">    public OffsetDateTime getDeletedAt()             { return deletedAt; }</span>
+<span class="nc" id="L61">    public void setDeletedAt(OffsetDateTime d)       { this.deletedAt = d; }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

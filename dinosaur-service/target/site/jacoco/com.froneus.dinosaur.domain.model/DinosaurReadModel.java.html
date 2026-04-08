@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DinosaurReadModel.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">dinosaur-service</a> &gt; <a href="index.source.html" class="el_package">com.froneus.dinosaur.domain.model</a> &gt; <span class="el_source">DinosaurReadModel.java</span></div><h1>DinosaurReadModel.java</h1><pre class="source lang-java linenums">package com.froneus.dinosaur.domain.model;
+
+import java.time.LocalDateTime;
+
+/**
+ * Modelo de lectura del Query Side CQRS — tabla dinosaurs_read.
+ * Contiene campos pre-calculados: isExtinct, dinosaurSummary.
+ * Solo se usa para GET — nunca para escritura.
+ */
+public class DinosaurReadModel {
+
+    private final Long          id;
+    private final String        name;
+    private final String        species;
+    private final DinosaurStatus status;
+    private final boolean       isExtinct;
+    private final String        dinosaurSummary;
+    private final LocalDateTime createdAt;
+
+<span class="fc" id="L20">    private DinosaurReadModel(Builder b) {</span>
+<span class="fc" id="L21">        this.id              = b.id;</span>
+<span class="fc" id="L22">        this.name            = b.name;</span>
+<span class="fc" id="L23">        this.species         = b.species;</span>
+<span class="fc" id="L24">        this.status          = b.status;</span>
+<span class="fc" id="L25">        this.isExtinct       = b.isExtinct;</span>
+<span class="fc" id="L26">        this.dinosaurSummary = b.dinosaurSummary;</span>
+<span class="fc" id="L27">        this.createdAt       = b.createdAt;</span>
+<span class="fc" id="L28">    }</span>
+
+<span class="fc" id="L30">    public Long          getId()             { return id; }</span>
+<span class="fc" id="L31">    public String        getName()           { return name; }</span>
+<span class="nc" id="L32">    public String        getSpecies()        { return species; }</span>
+<span class="nc" id="L33">    public DinosaurStatus getStatus()        { return status; }</span>
+<span class="fc" id="L34">    public boolean       isExtinct()         { return isExtinct; }</span>
+<span class="nc" id="L35">    public String        getDinosaurSummary(){ return dinosaurSummary; }</span>
+<span class="nc" id="L36">    public LocalDateTime getCreatedAt()      { return createdAt; }</span>
+
+<span class="fc" id="L38">    public static class Builder {</span>
+        private Long id;
+        private String name, species, dinosaurSummary;
+        private DinosaurStatus status;
+        private boolean isExtinct;
+        private LocalDateTime createdAt;
+
+<span class="fc" id="L45">        public Builder id(Long v)                    { id = v; return this; }</span>
+<span class="fc" id="L46">        public Builder name(String v)                { name = v; return this; }</span>
+<span class="fc" id="L47">        public Builder species(String v)             { species = v; return this; }</span>
+<span class="fc" id="L48">        public Builder status(DinosaurStatus v)      { status = v; return this; }</span>
+<span class="fc" id="L49">        public Builder isExtinct(boolean v)          { isExtinct = v; return this; }</span>
+<span class="fc" id="L50">        public Builder dinosaurSummary(String v)     { dinosaurSummary = v; return this; }</span>
+<span class="nc" id="L51">        public Builder createdAt(LocalDateTime v)    { createdAt = v; return this; }</span>
+<span class="fc" id="L52">        public DinosaurReadModel build()             { return new DinosaurReadModel(this); }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

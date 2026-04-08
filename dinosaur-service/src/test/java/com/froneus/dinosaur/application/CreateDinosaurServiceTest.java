@@ -4,12 +4,14 @@ import com.froneus.dinosaur.application.usecase.CreateDinosaurService;
 import com.froneus.dinosaur.domain.exception.DuplicateDinosaurNameException;
 import com.froneus.dinosaur.domain.exception.InvalidDinosaurDateException;
 import com.froneus.dinosaur.domain.model.Dinosaur;
+import com.froneus.dinosaur.domain.model.DinosaurEvent;
 import com.froneus.dinosaur.domain.model.DinosaurStatus;
 import com.froneus.dinosaur.domain.port.in.CreateDinosaurUseCase.CreateDinosaurCommand;
 import com.froneus.dinosaur.domain.port.out.DinosaurEventOutboxPort;
 import com.froneus.dinosaur.domain.port.out.DinosaurRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 import java.time.LocalDateTime;
@@ -50,7 +52,25 @@ class CreateDinosaurServiceTest {
         assertThat(result.getName()).isEqualTo("T-Rex");
         assertThat(result.getStatus()).isEqualTo(DinosaurStatus.ALIVE);
         verify(repository).save(any());
-        verify(outbox).store(any()); // event stored in outbox
+    }
+
+    @Test
+    void execute_shouldStoreCreatedEventInOutbox() {
+        var cmd = new CreateDinosaurCommand("T-Rex", "Theropod", DISCOVERY, EXTINCTION);
+        when(repository.existsByName("T-Rex")).thenReturn(false);
+        when(repository.save(any())).thenAnswer(inv -> {
+            Dinosaur d = inv.getArgument(0);
+            return Dinosaur.reconstitute(1L, d.getName(), d.getSpecies(),
+                    d.getDiscoveryDate(), d.getExtinctionDate(), d.getStatus());
+        });
+
+        service.execute(cmd);
+
+        ArgumentCaptor<DinosaurEvent> captor = ArgumentCaptor.forClass(DinosaurEvent.class);
+        verify(outbox).store(captor.capture());
+        assertThat(captor.getValue().eventType()).isEqualTo(DinosaurEvent.EventType.CREATED);
+        assertThat(captor.getValue().newStatus()).isEqualTo(DinosaurStatus.ALIVE);
+        assertThat(captor.getValue().dinosaurId()).isEqualTo(1L);
     }
 
     @Test
@@ -76,5 +96,20 @@ class CreateDinosaurServiceTest {
 
         verify(repository, never()).save(any());
         verify(outbox, never()).store(any());
+    }
+
+    @Test
+    void execute_shouldAlwaysSetStatusToAlive() {
+        var cmd = new CreateDinosaurCommand("T-Rex", "Theropod", DISCOVERY, EXTINCTION);
+        when(repository.existsByName("T-Rex")).thenReturn(false);
+        when(repository.save(any())).thenAnswer(inv -> {
+            Dinosaur d = inv.getArgument(0);
+            // Verifica que el status enviado al repositorio es ALIVE
+            assertThat(d.getStatus()).isEqualTo(DinosaurStatus.ALIVE);
+            return Dinosaur.reconstitute(1L, d.getName(), d.getSpecies(),
+                    d.getDiscoveryDate(), d.getExtinctionDate(), d.getStatus());
+        });
+
+        service.execute(cmd);
     }
 }

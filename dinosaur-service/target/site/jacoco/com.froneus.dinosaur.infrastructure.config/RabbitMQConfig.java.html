@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RabbitMQConfig.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">dinosaur-service</a> &gt; <a href="index.source.html" class="el_package">com.froneus.dinosaur.infrastructure.config</a> &gt; <span class="el_source">RabbitMQConfig.java</span></div><h1>RabbitMQConfig.java</h1><pre class="source lang-java linenums">package com.froneus.dinosaur.infrastructure.config;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import org.springframework.amqp.core.*;
+import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
+import org.springframework.amqp.support.converter.MessageConverter;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
+
+/**
+ * Configuración RabbitMQ + ObjectMapper compartido.
+ *
+ * Topología:
+ *   Exchange: dinosaur.exchange  (topic)
+ *       └── routing key: dinosaur.status.#
+ *             └── Queue: dinosaur.notifications
+ *
+ * Un solo ObjectMapper @Primary es usado por:
+ *   - DinosaurOutboxRedisAdapter  (serializar a JSON para Redis)
+ *   - RabbitMQEventPublisher      (serializar para RabbitMQ)
+ *   - DinosaurEventConsumer       (deserializar desde RabbitMQ)
+ */
+@Configuration
+<span class="nc" id="L29">public class RabbitMQConfig {</span>
+
+    public static final String EXCHANGE_NAME = &quot;dinosaur.exchange&quot;;
+    public static final String QUEUE_NAME    = &quot;dinosaur.notifications&quot;;
+    public static final String ROUTING_KEY   = &quot;dinosaur.status.#&quot;;
+
+    /**
+     * ObjectMapper @Primary compartido por toda la app.
+     * Configurado para serializar LocalDateTime como ISO-8601 string
+     * y manejar Java records correctamente.
+     */
+    @Bean
+    @Primary
+    public ObjectMapper objectMapper() {
+<span class="nc" id="L43">        ObjectMapper mapper = new ObjectMapper();</span>
+<span class="nc" id="L44">        mapper.registerModule(new JavaTimeModule());</span>
+<span class="nc" id="L45">        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);</span>
+<span class="nc" id="L46">        return mapper;</span>
+    }
+
+    @Bean
+    public TopicExchange dinosaurExchange() {
+<span class="nc" id="L51">        return ExchangeBuilder.topicExchange(EXCHANGE_NAME).durable(true).build();</span>
+    }
+
+    @Bean
+    public Queue dinosaurQueue() {
+<span class="nc" id="L56">        return QueueBuilder.durable(QUEUE_NAME).build();</span>
+    }
+
+    @Bean
+    public Binding dinosaurBinding(Queue dinosaurQueue, TopicExchange dinosaurExchange) {
+<span class="nc" id="L61">        return BindingBuilder.bind(dinosaurQueue).to(dinosaurExchange).with(ROUTING_KEY);</span>
+    }
+
+    @Bean
+    public MessageConverter jsonMessageConverter(ObjectMapper objectMapper) {
+<span class="nc" id="L66">        return new Jackson2JsonMessageConverter(objectMapper);</span>
+    }
+
+    @Bean
+    public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory,
+                                         MessageConverter jsonMessageConverter) {
+<span class="nc" id="L72">        RabbitTemplate template = new RabbitTemplate(connectionFactory);</span>
+<span class="nc" id="L73">        template.setMessageConverter(jsonMessageConverter);</span>
+<span class="nc" id="L74">        return template;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

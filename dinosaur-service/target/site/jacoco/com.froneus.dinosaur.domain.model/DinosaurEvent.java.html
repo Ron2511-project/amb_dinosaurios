@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DinosaurEvent.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">dinosaur-service</a> &gt; <a href="index.source.html" class="el_package">com.froneus.dinosaur.domain.model</a> &gt; <span class="el_source">DinosaurEvent.java</span></div><h1>DinosaurEvent.java</h1><pre class="source lang-java linenums">package com.froneus.dinosaur.domain.model;
+
+import java.time.LocalDateTime;
+
+/**
+ * Evento de dominio publicado cuando un dinosaurio cambia de estado.
+ *
+ * Formato del mensaje (challenge punto III):
+ * {
+ *   &quot;dinosaurId&quot;: 1,
+ *   &quot;newStatus&quot;:  &quot;ENDANGERED&quot;,
+ *   &quot;timestamp&quot;:  &quot;2023-10-01T09:00:00&quot;,
+ *   &quot;eventType&quot;:  &quot;STATUS_CHANGED&quot;
+ * }
+ *
+ * Se emite cuando:
+ *   POST   → CREATED        (estado inicial ALIVE)
+ *   PUT    → STATUS_CHANGED (solo si el status cambió)
+ *   DELETE → DELETED
+ *   Scheduler → SCHEDULER_UPDATE (ALIVE→ENDANGERED o ANY→EXTINCT)
+ */
+<span class="fc" id="L22">public record DinosaurEvent(</span>
+        Long           dinosaurId,
+        DinosaurStatus newStatus,
+        LocalDateTime  timestamp,
+        EventType      eventType
+) {
+<span class="fc" id="L28">    public enum EventType {</span>
+<span class="fc" id="L29">        CREATED,          // POST /v1/dinosaur</span>
+<span class="fc" id="L30">        STATUS_CHANGED,   // PUT  /v1/dinosaur/{id} con cambio de status</span>
+<span class="fc" id="L31">        DELETED,          // DELETE /v1/dinosaur/{id}</span>
+<span class="fc" id="L32">        SCHEDULER_UPDATE  // Actualización automática por scheduler</span>
+    }
+
+    public static DinosaurEvent of(Long id, DinosaurStatus status, EventType type) {
+<span class="fc" id="L36">        return new DinosaurEvent(id, status, LocalDateTime.now(), type);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>
