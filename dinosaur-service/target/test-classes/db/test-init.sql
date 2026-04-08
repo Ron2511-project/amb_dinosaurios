@@ -82,3 +82,15 @@ DROP TRIGGER IF EXISTS trg_dinosaurs_write_updated_at ON dinosaurs_write;
 CREATE TRIGGER trg_dinosaurs_write_updated_at
     BEFORE UPDATE ON dinosaurs_write
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- Tabla de mensajes procesados por el consumer
+CREATE TABLE IF NOT EXISTS dinosaur_messages (
+    id              BIGSERIAL    PRIMARY KEY,
+    dinosaur_id     BIGINT       NOT NULL,
+    new_status      TEXT         NOT NULL,
+    event_type      TEXT         NOT NULL,
+    event_timestamp TIMESTAMPTZ  NOT NULL,
+    received_at     TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    routing_key     TEXT,
+    processed       BOOLEAN      NOT NULL DEFAULT TRUE
+);

@@ -32,6 +32,7 @@ services:
       - ./dinosaur-db/sql/03_read_model.sql:/docker-entrypoint-initdb.d/03_read_model.sql:ro
       - ./dinosaur-db/sql/04_sync_and_triggers.sql:/docker-entrypoint-initdb.d/04_sync_and_triggers.sql:ro
       - ./dinosaur-db/sql/05_seed_data.sql:/docker-entrypoint-initdb.d/05_seed_data.sql:ro
+      - ./dinosaur-db/sql/07_messages_table.sql:/docker-entrypoint-initdb.d/07_messages_table.sql:ro
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-froneus} -d ${POSTGRES_DB:-froneus_db}"]

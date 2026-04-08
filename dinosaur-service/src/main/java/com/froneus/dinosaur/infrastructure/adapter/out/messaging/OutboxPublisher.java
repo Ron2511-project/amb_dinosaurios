@@ -10,52 +10,37 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 
-/**
- * Outbox Publisher — adaptador de entrada tipo scheduler.
- *
- * Corre cada 5 segundos y transfiere eventos del Outbox (Redis)
- * a RabbitMQ en lotes de hasta 50 eventos.
- *
- * Flujo:
- *   1. pollBatch() — toma hasta 50 eventos de Redis (LPOP atómico)
- *   2. publish()   — publica cada uno en RabbitMQ
- *   3. Si publish() falla → el evento ya fue removido de Redis (LPOP)
- *      En producción se implementaría una dead-letter queue.
- *
- * fixedDelay vs cron:
- *   fixedDelay asegura que el siguiente ciclo empiece DESPUÉS de que
- *   termine el actual, evitando solapamiento si RabbitMQ tarda.
- */
 @Component
 public class OutboxPublisher {
 
-    private static final Logger log       = LoggerFactory.getLogger(OutboxPublisher.class);
+    private static final Logger log        = LoggerFactory.getLogger(OutboxPublisher.class);
     private static final int    BATCH_SIZE = 50;
 
-    private final DinosaurEventOutboxPort     outbox;
-    private final DinosaurEventPublisherPort  publisher;
+    private final DinosaurEventOutboxPort    outbox;
+    private final DinosaurEventPublisherPort publisher;
 
     public OutboxPublisher(DinosaurEventOutboxPort outbox,
                            DinosaurEventPublisherPort publisher) {
         this.outbox     = outbox;
         this.publisher  = publisher;
+        log.info(">>> OutboxPublisher initialized");
     }
 
     @Scheduled(fixedDelay = 5000)
     public void publishPendingEvents() {
+        log.debug(">>> OutboxPublisher tick — checking for pending events");
         List<DinosaurEvent> events = outbox.pollBatch(BATCH_SIZE);
         if (events.isEmpty()) return;
 
-        log.info("OutboxPublisher — processing {} events", events.size());
+        log.info(">>> OutboxPublisher — found {} event(s) to publish", events.size());
 
         for (DinosaurEvent event : events) {
             try {
                 publisher.publish(event);
                 outbox.ack(event);
             } catch (Exception e) {
-                log.error("Failed to publish event dinosaurId={}: {}",
+                log.error(">>> Failed to publish to RabbitMQ, re-queuing — dinosaurId={}: {}",
                         event.dinosaurId(), e.getMessage(), e);
-                // Re-encolar para reintento
                 outbox.store(event);
             }
         }

@@ -12,19 +12,6 @@ import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Adaptador Redis para el Outbox de eventos.
- *
- * Usa una Redis List como cola FIFO:
- *   RPUSH outbox:events  {json}   ← store()    — agrega al final
- *   LPOP  outbox:events  N        ← pollBatch() — toma del inicio
- *
- * Si el publisher falla (RabbitMQ caído), el evento NO se hace ack
- * y permanece en Redis para reintento.
- *
- * Nota: este diseño es at-least-once. Para exactly-once se necesitaría
- * un mecanismo de deduplicación en el consumer.
- */
 @Component
 public class DinosaurOutboxRedisAdapter implements DinosaurEventOutboxPort {
 
@@ -38,17 +25,24 @@ public class DinosaurOutboxRedisAdapter implements DinosaurEventOutboxPort {
                                       ObjectMapper objectMapper) {
         this.redisTemplate = redisTemplate;
         this.objectMapper  = objectMapper;
+        log.info(">>> DinosaurOutboxRedisAdapter initialized");
     }
 
     @Override
     public void store(DinosaurEvent event) {
+        log.info(">>> DinosaurOutboxRedisAdapter.store() called — dinosaurId={} status={} type={}",
+                event.dinosaurId(), event.newStatus(), event.eventType());
         try {
             String json = objectMapper.writeValueAsString(event);
-            redisTemplate.opsForList().rightPush(OUTBOX_KEY, json);
-            log.debug("Event stored in outbox — dinosaurId={} status={}",
-                    event.dinosaurId(), event.newStatus());
+            log.info(">>> Serialized event JSON: {}", json);
+
+            Long listSize = redisTemplate.opsForList().rightPush(OUTBOX_KEY, json);
+            log.info(">>> RPUSH to outbox:events — new list size={}", listSize);
+
         } catch (JsonProcessingException e) {
-            log.error("Failed to serialize event: {}", e.getMessage(), e);
+            log.error(">>> FAILED to serialize event: {}", e.getMessage(), e);
+        } catch (Exception e) {
+            log.error(">>> FAILED to push to Redis: {}", e.getMessage(), e);
         }
     }
 
@@ -61,21 +55,17 @@ public class DinosaurOutboxRedisAdapter implements DinosaurEventOutboxPort {
             try {
                 events.add(objectMapper.readValue(json, DinosaurEvent.class));
             } catch (JsonProcessingException e) {
-                log.error("Failed to deserialize event: {}", e.getMessage(), e);
+                log.error(">>> Failed to deserialize outbox event: {}", e.getMessage(), e);
             }
+        }
+        if (!events.isEmpty()) {
+            log.info(">>> Outbox polled {} events", events.size());
         }
         return events;
     }
 
     @Override
     public void ack(DinosaurEvent event) {
-        // El ack ocurre implícitamente en pollBatch via LPOP atómico.
-        // Este método existe para extensibilidad (e.g. dead letter queue).
-        log.debug("Event acknowledged — dinosaurId={}", event.dinosaurId());
-    }
-
-    public long pendingCount() {
-        Long size = redisTemplate.opsForList().size(OUTBOX_KEY);
-        return size != null ? size : 0;
+        log.info(">>> Event acked — dinosaurId={} type={}", event.dinosaurId(), event.eventType());
     }
 }

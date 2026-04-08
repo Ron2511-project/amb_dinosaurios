@@ -13,14 +13,20 @@ import org.springframework.stereotype.Component;
  *
  * Exchange: dinosaur.exchange (topic)
  * Routing key: dinosaur.status.{eventType}
- *   dinosaur.status.CREATED
- *   dinosaur.status.STATUS_CHANGED
- *   dinosaur.status.DELETED
- *   dinosaur.status.SCHEDULER_UPDATE
  *
- * El consumer puede suscribirse a patrones:
- *   dinosaur.status.*       → todos los eventos
- *   dinosaur.status.CREATED → solo creaciones
+ * Ejemplos de routing keys generadas:
+ *   dinosaur.status.CREATED          → POST exitoso
+ *   dinosaur.status.STATUS_CHANGED   → PUT con cambio de status
+ *   dinosaur.status.DELETED          → DELETE
+ *   dinosaur.status.SCHEDULER_UPDATE → scheduler automático
+ *
+ * El JSON publicado tiene el formato del challenge (punto III):
+ * {
+ *   "dinosaurId": 21,
+ *   "newStatus":  "ALIVE",
+ *   "timestamp":  "2026-04-07T10:30:00",
+ *   "eventType":  "CREATED"
+ * }
  */
 @Component
 public class RabbitMQEventPublisher implements DinosaurEventPublisherPort {
@@ -43,7 +49,7 @@ public class RabbitMQEventPublisher implements DinosaurEventPublisherPort {
                 event
         );
 
-        log.info("Event published — exchange={} routingKey={} dinosaurId={} status={}",
+        log.info("Event published to RabbitMQ — exchange={} routingKey={} dinosaurId={} newStatus={}",
                 RabbitMQConfig.EXCHANGE_NAME, routingKey,
                 event.dinosaurId(), event.newStatus());
     }

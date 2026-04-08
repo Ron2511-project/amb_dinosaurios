@@ -1,5 +1,6 @@
 package com.froneus.dinosaur.application.usecase;
 
+import com.froneus.dinosaur.domain.exception.DinosaurNotFoundException;
 import com.froneus.dinosaur.domain.model.DinosaurEvent;
 import com.froneus.dinosaur.domain.model.DinosaurEvent.EventType;
 import com.froneus.dinosaur.domain.model.DinosaurStatus;
@@ -20,9 +21,12 @@ public class DeleteDinosaurService implements DeleteDinosaurUseCase {
 
     @Override
     public void execute(Long id) {
+        // Verify exists (validation already done in controller, but double-check)
+        repository.findById(id)
+                .orElseThrow(() -> new DinosaurNotFoundException("Dinosaur not found"));
+
         repository.softDelete(id);
 
-        // Emitir evento de eliminación
         outbox.store(DinosaurEvent.of(id, DinosaurStatus.EXTINCT, EventType.DELETED));
     }
 }

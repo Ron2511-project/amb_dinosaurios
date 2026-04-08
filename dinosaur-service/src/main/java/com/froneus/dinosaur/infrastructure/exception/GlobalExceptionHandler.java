@@ -17,7 +17,7 @@ public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-    // ── 400 — Business validation errors ──────────────────────────────────────
+    // ── 400 ───────────────────────────────────────────────────────────────────
 
     @ExceptionHandler(DuplicateDinosaurNameException.class)
     public ResponseEntity<ErrorResponse> handleDuplicate(DuplicateDinosaurNameException ex) {
@@ -44,14 +44,14 @@ public class GlobalExceptionHandler {
         return error(HttpStatus.BAD_REQUEST, "Request body is invalid");
     }
 
-    // ── 404 — Not found ───────────────────────────────────────────────────────
+    // ── 404 ───────────────────────────────────────────────────────────────────
 
     @ExceptionHandler(DinosaurNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleNotFound(DinosaurNotFoundException ex) {
         return error(HttpStatus.NOT_FOUND, ex.getMessage());
     }
 
-    // ── 503 — Circuit Breaker open ────────────────────────────────────────────
+    // ── 503 — Circuit Breaker ─────────────────────────────────────────────────
 
     @ExceptionHandler(CallNotPermittedException.class)
     public ResponseEntity<ErrorResponse> handleCircuitBreakerOpen(CallNotPermittedException ex) {
@@ -60,7 +60,7 @@ public class GlobalExceptionHandler {
                 "Service temporarily unavailable. Please try again.");
     }
 
-    // ── 500 — Unexpected error ────────────────────────────────────────────────
+    // ── 500 ───────────────────────────────────────────────────────────────────
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneric(Exception ex) {

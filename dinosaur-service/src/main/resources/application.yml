@@ -77,12 +77,6 @@ resilience4j:
         wait-duration-in-open-state: 10s
         failure-rate-threshold: 50
         event-consumer-buffer-size: 10
-        record-exceptions:
-          - java.sql.SQLException
-          - java.net.ConnectException
-          - java.util.concurrent.TimeoutException
-          - org.springframework.dao.DataAccessException
-          - org.springframework.data.redis.RedisConnectionFailureException
 
 management:
   endpoints:
@@ -93,13 +87,9 @@ management:
     health:
       show-details: always
 
-# Scheduler — cron cada 10 minutos
-scheduler:
-  status-update:
-    cron: "0 0/10 * * * *"
-
-# Outbox Publisher — cada 5 segundos
-outbox:
-  publisher:
-    fixed-delay-ms: 5000
-    batch-size: 50
+# ── Logging explícito para ver el flujo completo ──────────────────────────────
+logging:
+  level:
+    com.froneus.dinosaur: INFO
+    org.springframework.amqp: INFO
+    org.springframework.data.redis: INFO
