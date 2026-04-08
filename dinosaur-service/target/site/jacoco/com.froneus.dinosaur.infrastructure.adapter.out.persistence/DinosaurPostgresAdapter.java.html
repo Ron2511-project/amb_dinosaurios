@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DinosaurPostgresAdapter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">dinosaur-service</a> &gt; <a href="index.source.html" class="el_package">com.froneus.dinosaur.infrastructure.adapter.out.persistence</a> &gt; <span class="el_source">DinosaurPostgresAdapter.java</span></div><h1>DinosaurPostgresAdapter.java</h1><pre class="source lang-java linenums">package com.froneus.dinosaur.infrastructure.adapter.out.persistence;
+
+import com.froneus.dinosaur.domain.model.Dinosaur;
+import com.froneus.dinosaur.domain.model.DinosaurReadModel;
+import com.froneus.dinosaur.domain.model.PagedResult;
+import com.froneus.dinosaur.domain.port.out.DinosaurRepository;
+import com.froneus.dinosaur.infrastructure.adapter.out.persistence.entity.DinosaurEntity;
+import com.froneus.dinosaur.infrastructure.adapter.out.persistence.entity.DinosaurReadEntity;
+import com.froneus.dinosaur.infrastructure.adapter.out.persistence.mapper.DinosaurPersistenceMapper;
+import com.froneus.dinosaur.infrastructure.adapter.out.persistence.repository.DinosaurJpaRepository;
+import com.froneus.dinosaur.infrastructure.adapter.out.persistence.repository.DinosaurReadJpaRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.Optional;
+
+@Component
+public class DinosaurPostgresAdapter implements DinosaurRepository {
+
+    private final DinosaurJpaRepository     writeRepo;
+    private final DinosaurReadJpaRepository readRepo;
+    private final DinosaurPersistenceMapper mapper;
+
+    public DinosaurPostgresAdapter(DinosaurJpaRepository writeRepo,
+                                   DinosaurReadJpaRepository readRepo,
+<span class="nc" id="L29">                                   DinosaurPersistenceMapper mapper) {</span>
+<span class="nc" id="L30">        this.writeRepo = writeRepo;</span>
+<span class="nc" id="L31">        this.readRepo  = readRepo;</span>
+<span class="nc" id="L32">        this.mapper    = mapper;</span>
+<span class="nc" id="L33">    }</span>
+
+    @Override public boolean existsByName(String name) {
+<span class="nc" id="L36">        return writeRepo.existsByNameAndNotDeleted(name);</span>
+    }
+
+    @Override public boolean existsByNameAndNotId(String name, Long excludeId) {
+<span class="nc" id="L40">        return writeRepo.existsByNameAndNotId(name, excludeId);</span>
+    }
+
+    @Override
+    @Transactional
+    public Dinosaur save(Dinosaur d) {
+<span class="nc" id="L46">        writeRepo.insert(d.getName(), d.getSpecies(),</span>
+<span class="nc" id="L47">                mapper.toOffset(d.getDiscoveryDate()),</span>
+<span class="nc" id="L48">                mapper.toOffset(d.getExtinctionDate()),</span>
+<span class="nc" id="L49">                mapper.toDbStatusString(d.getStatus()));</span>
+<span class="nc" id="L50">        return mapper.toDomain(writeRepo.findTopByNameOrderByIdDesc(d.getName()));</span>
+    }
+
+    @Override public Optional&lt;Dinosaur&gt; findById(Long id) {
+<span class="nc" id="L54">        return writeRepo.findActiveById(id).map(mapper::toDomain);</span>
+    }
+
+    @Override
+    @Transactional
+    public void update(Dinosaur d) {
+<span class="nc" id="L60">        writeRepo.update(d.getId(), d.getName(), d.getSpecies(),</span>
+<span class="nc" id="L61">                mapper.toOffset(d.getDiscoveryDate()),</span>
+<span class="nc" id="L62">                mapper.toOffset(d.getExtinctionDate()),</span>
+<span class="nc" id="L63">                mapper.toDbStatusString(d.getStatus()));</span>
+<span class="nc" id="L64">    }</span>
+
+    @Override
+    @Transactional
+    public void softDelete(Long id) {
+<span class="nc" id="L69">        writeRepo.softDelete(id);</span>
+<span class="nc" id="L70">    }</span>
+
+    // ── Scheduler ─────────────────────────────────────────────────────────────
+
+    @Override
+    @Transactional
+    public List&lt;Dinosaur&gt; updateAliveToEndangeredAndReturn() {
+<span class="nc" id="L77">        return writeRepo.updateAliveToEndangeredAndReturn()</span>
+<span class="nc" id="L78">                .stream().map(mapper::toDomain).toList();</span>
+    }
+
+    @Override
+    @Transactional
+    public List&lt;Dinosaur&gt; updateToExtinctAndReturn() {
+<span class="nc" id="L84">        return writeRepo.updateToExtinctAndReturn()</span>
+<span class="nc" id="L85">                .stream().map(mapper::toDomain).toList();</span>
+    }
+
+    // ── Query Side ────────────────────────────────────────────────────────────
+
+    @Override public Optional&lt;DinosaurReadModel&gt; findReadById(Long id) {
+<span class="nc" id="L91">        return readRepo.findActiveById(id).map(mapper::toReadModel);</span>
+    }
+
+    @Override
+    public PagedResult&lt;DinosaurReadModel&gt; findAllActive(int page, int pageSize) {
+<span class="nc" id="L96">        PageRequest pageable = PageRequest.of(page - 1, pageSize);</span>
+<span class="nc" id="L97">        Page&lt;DinosaurReadEntity&gt; result = readRepo.findAllActive(pageable);</span>
+<span class="nc" id="L98">        List&lt;DinosaurReadModel&gt; data = result.getContent().stream()</span>
+<span class="nc" id="L99">                .map(mapper::toReadModel).toList();</span>
+<span class="nc" id="L100">        return new PagedResult&lt;&gt;(data, result.getTotalElements(), page, pageSize);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

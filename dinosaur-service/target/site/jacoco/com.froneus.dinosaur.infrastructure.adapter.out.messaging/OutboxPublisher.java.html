@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OutboxPublisher.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">dinosaur-service</a> &gt; <a href="index.source.html" class="el_package">com.froneus.dinosaur.infrastructure.adapter.out.messaging</a> &gt; <span class="el_source">OutboxPublisher.java</span></div><h1>OutboxPublisher.java</h1><pre class="source lang-java linenums">package com.froneus.dinosaur.infrastructure.adapter.out.messaging;
+
+import com.froneus.dinosaur.domain.model.DinosaurEvent;
+import com.froneus.dinosaur.domain.port.out.DinosaurEventOutboxPort;
+import com.froneus.dinosaur.domain.port.out.DinosaurEventPublisherPort;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
+
+import java.util.List;
+
+@Component
+public class OutboxPublisher {
+
+<span class="nc" id="L16">    private static final Logger log        = LoggerFactory.getLogger(OutboxPublisher.class);</span>
+    private static final int    BATCH_SIZE = 50;
+
+    private final DinosaurEventOutboxPort    outbox;
+    private final DinosaurEventPublisherPort publisher;
+
+    public OutboxPublisher(DinosaurEventOutboxPort outbox,
+<span class="nc" id="L23">                           DinosaurEventPublisherPort publisher) {</span>
+<span class="nc" id="L24">        this.outbox     = outbox;</span>
+<span class="nc" id="L25">        this.publisher  = publisher;</span>
+<span class="nc" id="L26">        log.info(&quot;&gt;&gt;&gt; OutboxPublisher initialized&quot;);</span>
+<span class="nc" id="L27">    }</span>
+
+    @Scheduled(fixedDelay = 5000)
+    public void publishPendingEvents() {
+<span class="nc" id="L31">        log.debug(&quot;&gt;&gt;&gt; OutboxPublisher tick — checking for pending events&quot;);</span>
+<span class="nc" id="L32">        List&lt;DinosaurEvent&gt; events = outbox.pollBatch(BATCH_SIZE);</span>
+<span class="nc bnc" id="L33" title="All 2 branches missed.">        if (events.isEmpty()) return;</span>
+
+<span class="nc" id="L35">        log.info(&quot;&gt;&gt;&gt; OutboxPublisher — found {} event(s) to publish&quot;, events.size());</span>
+
+<span class="nc bnc" id="L37" title="All 2 branches missed.">        for (DinosaurEvent event : events) {</span>
+            try {
+<span class="nc" id="L39">                publisher.publish(event);</span>
+<span class="nc" id="L40">                outbox.ack(event);</span>
+<span class="nc" id="L41">            } catch (Exception e) {</span>
+<span class="nc" id="L42">                log.error(&quot;&gt;&gt;&gt; Failed to publish to RabbitMQ, re-queuing — dinosaurId={}: {}&quot;,</span>
+<span class="nc" id="L43">                        event.dinosaurId(), e.getMessage(), e);</span>
+<span class="nc" id="L44">                outbox.store(event);</span>
+<span class="nc" id="L45">            }</span>
+<span class="nc" id="L46">        }</span>
+<span class="nc" id="L47">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

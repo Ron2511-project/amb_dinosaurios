@@ -3,27 +3,28 @@ package com.froneus.dinosaur.domain.model;
 import java.time.LocalDateTime;
 
 /**
- * Evento de dominio que se publica cuando un dinosaurio cambia de estado.
+ * Evento de dominio publicado cuando un dinosaurio cambia de estado.
  *
  * Formato del mensaje (challenge punto III):
  * {
  *   "dinosaurId": 1,
  *   "newStatus":  "ENDANGERED",
- *   "timestamp":  "2023-10-01T09:00:00"
+ *   "timestamp":  "2023-10-01T09:00:00",
+ *   "eventType":  "STATUS_CHANGED"
  * }
  *
- * Inmutable — se crea una vez y no se modifica.
+ * Se emite cuando:
+ *   POST   → CREATED        (estado inicial ALIVE)
+ *   PUT    → STATUS_CHANGED (solo si el status cambió)
+ *   DELETE → DELETED
+ *   Scheduler → SCHEDULER_UPDATE (ALIVE→ENDANGERED o ANY→EXTINCT)
  */
 public record DinosaurEvent(
-        Long          dinosaurId,
+        Long           dinosaurId,
         DinosaurStatus newStatus,
         LocalDateTime  timestamp,
         EventType      eventType
 ) {
-    /**
-     * Tipo de operación que originó el evento.
-     * Útil para el consumer para distinguir el origen.
-     */
     public enum EventType {
         CREATED,          // POST /v1/dinosaur
         STATUS_CHANGED,   // PUT  /v1/dinosaur/{id} con cambio de status

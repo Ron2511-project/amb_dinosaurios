@@ -8,15 +8,26 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 /**
- * Scheduler que corre cada 10 minutos.
+ * Scheduler de actualización de estados de dinosaurios.
  *
- * Delega toda la lógica al caso de uso UpdateDinosaurStatusUseCase
- * para mantener la separación de responsabilidades de la arquitectura hexagonal:
- *   - El scheduler es un adaptador de entrada (como el REST controller)
- *   - La lógica de negocio vive en el use case y el dominio
+ * Arquitectura hexagonal:
+ *   El scheduler es un ADAPTADOR DE ENTRADA — igual que el REST controller
+ *   pero disparado por tiempo en vez de HTTP.
+ *   Toda la lógica vive en UpdateDinosaurStatusUseCase (dominio/aplicación).
  *
- * Cron: "0 0/10 * * * *"
- *   Segundo 0, cada 10 minutos: xx:00, xx:10, xx:20, xx:30, xx:40, xx:50
+ * Reglas del challenge (punto II):
+ *   - 24hs antes del extinctionDate: ALIVE → ENDANGERED
+ *   - Al llegar extinctionDate:      ANY   → EXTINCT
+ *
+ * Configuración:
+ *   Producción: cron cada 10 minutos → "0 0/10 * * * *"
+ *   Pruebas:    fixedDelay cada 60s  → cambiar la anotación @Scheduled
+ *
+ * Para ver el scheduler en acción:
+ *   docker compose logs -f dinosaur-service | grep -E "Scheduler|ENDANGERED|EXTINCT"
+ *
+ * Para forzar ejecución inmediata sin esperar el cron,
+ * crear un dinosaurio con extinctionDate en el pasado o en las próximas 24hs.
  */
 @Component
 public class DinosaurStatusScheduler {
@@ -29,15 +40,29 @@ public class DinosaurStatusScheduler {
         this.updateStatusUseCase = updateStatusUseCase;
     }
 
+    /**
+     * Producción: cada 10 minutos exactos.
+     * Para pruebas rápidas cambiar a: @Scheduled(fixedDelay = 60000)
+     */
     @Scheduled(cron = "0 0/10 * * * *")
     public void updateDinosaurStatuses() {
-        log.info("Scheduler started — checking dinosaur statuses");
+        log.info("╔══════════════════════════════════════════════");
+        log.info("║ SCHEDULER STARTED — checking dinosaur statuses");
+        log.info("╠══════════════════════════════════════════════");
         try {
             StatusUpdateResult result = updateStatusUseCase.execute();
-            log.info("Scheduler completed — ENDANGERED: {}, EXTINCT: {}",
-                    result.endangeredCount(), result.extinctCount());
+
+            if (result.extinctCount() > 0 || result.endangeredCount() > 0) {
+                log.info("║ Changes detected:");
+                log.info("║   → EXTINCT:    {}", result.extinctCount());
+                log.info("║   → ENDANGERED: {}", result.endangeredCount());
+            } else {
+                log.info("║ No status changes required");
+            }
+            log.info("╚══════════════════════════════════════════════");
         } catch (Exception e) {
-            log.error("Scheduler failed: {}", e.getMessage(), e);
+            log.error("║ Scheduler FAILED: {}", e.getMessage(), e);
+            log.info("╚══════════════════════════════════════════════");
         }
     }
 }

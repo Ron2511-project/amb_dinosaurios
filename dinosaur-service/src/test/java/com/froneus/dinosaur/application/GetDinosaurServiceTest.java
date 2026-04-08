@@ -41,6 +41,7 @@ class GetDinosaurServiceTest {
         assertThat(result.getId()).isEqualTo(1L);
         assertThat(result.getName()).isEqualTo("T-Rex");
         assertThat(result.isExtinct()).isFalse();
+        verify(repository).findReadById(1L);
     }
 
     @Test
@@ -49,7 +50,7 @@ class GetDinosaurServiceTest {
 
         assertThatThrownBy(() -> service.getById(99L))
                 .isInstanceOf(DinosaurNotFoundException.class)
-                .hasMessage("Dinosaurio no encontrado");
+                .hasMessage("Dinosaur not found");
     }
 
     @Test
@@ -67,5 +68,17 @@ class GetDinosaurServiceTest {
         assertThat(result.count()).isEqualTo(1L);
         assertThat(result.page()).isEqualTo(1);
         assertThat(result.pageSize()).isEqualTo(10);
+        verify(repository).findAllActive(1, 10);
+    }
+
+    @Test
+    void getAll_shouldReturnEmptyWhenNoDinosaurs() {
+        PagedResult<DinosaurReadModel> empty = new PagedResult<>(List.of(), 0L, 1, 10);
+        when(repository.findAllActive(1, 10)).thenReturn(empty);
+
+        PagedResult<DinosaurReadModel> result = service.getAll(1, 10);
+
+        assertThat(result.data()).isEmpty();
+        assertThat(result.count()).isZero();
     }
 }

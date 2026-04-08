@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DinosaurStatusScheduler.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">dinosaur-service</a> &gt; <a href="index.source.html" class="el_package">com.froneus.dinosaur.infrastructure.scheduler</a> &gt; <span class="el_source">DinosaurStatusScheduler.java</span></div><h1>DinosaurStatusScheduler.java</h1><pre class="source lang-java linenums">package com.froneus.dinosaur.infrastructure.scheduler;
+
+import com.froneus.dinosaur.domain.port.in.UpdateDinosaurStatusUseCase;
+import com.froneus.dinosaur.domain.port.in.UpdateDinosaurStatusUseCase.StatusUpdateResult;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
+
+/**
+ * Scheduler de actualización de estados de dinosaurios.
+ *
+ * Arquitectura hexagonal:
+ *   El scheduler es un ADAPTADOR DE ENTRADA — igual que el REST controller
+ *   pero disparado por tiempo en vez de HTTP.
+ *   Toda la lógica vive en UpdateDinosaurStatusUseCase (dominio/aplicación).
+ *
+ * Reglas del challenge (punto II):
+ *   - 24hs antes del extinctionDate: ALIVE → ENDANGERED
+ *   - Al llegar extinctionDate:      ANY   → EXTINCT
+ *
+ * Configuración:
+ *   Producción: cron cada 10 minutos → &quot;0 0/10 * * * *&quot;
+ *   Pruebas:    fixedDelay cada 60s  → cambiar la anotación @Scheduled
+ *
+ * Para ver el scheduler en acción:
+ *   docker compose logs -f dinosaur-service | grep -E &quot;Scheduler|ENDANGERED|EXTINCT&quot;
+ *
+ * Para forzar ejecución inmediata sin esperar el cron,
+ * crear un dinosaurio con extinctionDate en el pasado o en las próximas 24hs.
+ */
+@Component
+public class DinosaurStatusScheduler {
+
+<span class="nc" id="L35">    private static final Logger log = LoggerFactory.getLogger(DinosaurStatusScheduler.class);</span>
+
+    private final UpdateDinosaurStatusUseCase updateStatusUseCase;
+
+<span class="nc" id="L39">    public DinosaurStatusScheduler(UpdateDinosaurStatusUseCase updateStatusUseCase) {</span>
+<span class="nc" id="L40">        this.updateStatusUseCase = updateStatusUseCase;</span>
+<span class="nc" id="L41">    }</span>
+
+    /**
+     * Producción: cada 10 minutos exactos.
+     * Para pruebas rápidas cambiar a: @Scheduled(fixedDelay = 60000)
+     */
+    @Scheduled(cron = &quot;0 0/10 * * * *&quot;)
+    public void updateDinosaurStatuses() {
+<span class="nc" id="L49">        log.info(&quot;╔══════════════════════════════════════════════&quot;);</span>
+<span class="nc" id="L50">        log.info(&quot;║ SCHEDULER STARTED — checking dinosaur statuses&quot;);</span>
+<span class="nc" id="L51">        log.info(&quot;╠══════════════════════════════════════════════&quot;);</span>
+        try {
+<span class="nc" id="L53">            StatusUpdateResult result = updateStatusUseCase.execute();</span>
+
+<span class="nc bnc" id="L55" title="All 4 branches missed.">            if (result.extinctCount() &gt; 0 || result.endangeredCount() &gt; 0) {</span>
+<span class="nc" id="L56">                log.info(&quot;║ Changes detected:&quot;);</span>
+<span class="nc" id="L57">                log.info(&quot;║   → EXTINCT:    {}&quot;, result.extinctCount());</span>
+<span class="nc" id="L58">                log.info(&quot;║   → ENDANGERED: {}&quot;, result.endangeredCount());</span>
+            } else {
+<span class="nc" id="L60">                log.info(&quot;║ No status changes required&quot;);</span>
+            }
+<span class="nc" id="L62">            log.info(&quot;╚══════════════════════════════════════════════&quot;);</span>
+<span class="nc" id="L63">        } catch (Exception e) {</span>
+<span class="nc" id="L64">            log.error(&quot;║ Scheduler FAILED: {}&quot;, e.getMessage(), e);</span>
+<span class="nc" id="L65">            log.info(&quot;╚══════════════════════════════════════════════&quot;);</span>
+<span class="nc" id="L66">        }</span>
+<span class="nc" id="L67">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

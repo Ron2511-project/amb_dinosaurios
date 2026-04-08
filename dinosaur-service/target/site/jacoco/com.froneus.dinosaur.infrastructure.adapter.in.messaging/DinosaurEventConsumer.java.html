@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DinosaurEventConsumer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">dinosaur-service</a> &gt; <a href="index.source.html" class="el_package">com.froneus.dinosaur.infrastructure.adapter.in.messaging</a> &gt; <span class="el_source">DinosaurEventConsumer.java</span></div><h1>DinosaurEventConsumer.java</h1><pre class="source lang-java linenums">package com.froneus.dinosaur.infrastructure.adapter.in.messaging;
+
+import com.froneus.dinosaur.domain.model.DinosaurEvent;
+import com.froneus.dinosaur.infrastructure.adapter.out.persistence.entity.DinosaurMessageEntity;
+import com.froneus.dinosaur.infrastructure.adapter.out.persistence.repository.DinosaurMessageRepository;
+import com.froneus.dinosaur.infrastructure.config.RabbitMQConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.messaging.handler.annotation.Header;
+import org.springframework.stereotype.Component;
+
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+
+/**
+ * Consumer RabbitMQ — procesa eventos de dinosaurios.
+ *
+ * Al recibir cada mensaje:
+ *   1. Loguea el evento
+ *   2. Persiste el registro en dinosaur_messages (PostgreSQL)
+ *
+ * Consultar historial de mensajes:
+ *   SELECT * FROM dinosaur_messages ORDER BY received_at DESC;
+ *
+ * Ver en pgAdmin:
+ *   Tables → dinosaur_messages
+ */
+@Component
+public class DinosaurEventConsumer {
+
+<span class="nc" id="L32">    private static final Logger log = LoggerFactory.getLogger(DinosaurEventConsumer.class);</span>
+
+    private final DinosaurMessageRepository messageRepository;
+
+<span class="nc" id="L36">    public DinosaurEventConsumer(DinosaurMessageRepository messageRepository) {</span>
+<span class="nc" id="L37">        this.messageRepository = messageRepository;</span>
+<span class="nc" id="L38">    }</span>
+
+    @RabbitListener(queues = RabbitMQConfig.QUEUE_NAME)
+    public void onDinosaurEvent(DinosaurEvent event) {
+<span class="nc" id="L42">        log.info(&quot;╔══════════════════════════════════════════════&quot;);</span>
+<span class="nc" id="L43">        log.info(&quot;║ EVENT RECEIVED FROM RABBITMQ&quot;);</span>
+<span class="nc" id="L44">        log.info(&quot;║ dinosaurId : {}&quot;, event.dinosaurId());</span>
+<span class="nc" id="L45">        log.info(&quot;║ newStatus  : {}&quot;, event.newStatus());</span>
+<span class="nc" id="L46">        log.info(&quot;║ eventType  : {}&quot;, event.eventType());</span>
+<span class="nc" id="L47">        log.info(&quot;║ timestamp  : {}&quot;, event.timestamp());</span>
+<span class="nc" id="L48">        log.info(&quot;╚══════════════════════════════════════════════&quot;);</span>
+
+        // Persistir en tabla dinosaur_messages para visibilidad y auditoría
+        try {
+<span class="nc" id="L52">            DinosaurMessageEntity message = new DinosaurMessageEntity();</span>
+<span class="nc" id="L53">            message.setDinosaurId(event.dinosaurId());</span>
+<span class="nc" id="L54">            message.setNewStatus(event.newStatus().name());</span>
+<span class="nc" id="L55">            message.setEventType(event.eventType().name());</span>
+<span class="nc" id="L56">            message.setEventTimestamp(event.timestamp().atOffset(ZoneOffset.UTC));</span>
+<span class="nc" id="L57">            message.setReceivedAt(OffsetDateTime.now(ZoneOffset.UTC));</span>
+<span class="nc" id="L58">            message.setRoutingKey(&quot;dinosaur.status.&quot; + event.eventType().name());</span>
+<span class="nc" id="L59">            message.setProcessed(true);</span>
+
+<span class="nc" id="L61">            DinosaurMessageEntity saved = messageRepository.save(message);</span>
+<span class="nc" id="L62">            log.info(&quot;Message persisted in dinosaur_messages — id={} dinosaurId={} eventType={}&quot;,</span>
+<span class="nc" id="L63">                    saved.getId(), event.dinosaurId(), event.eventType());</span>
+
+<span class="nc" id="L65">        } catch (Exception e) {</span>
+<span class="nc" id="L66">            log.error(&quot;Failed to persist message for dinosaurId={}: {}&quot;,</span>
+<span class="nc" id="L67">                    event.dinosaurId(), e.getMessage(), e);</span>
+<span class="nc" id="L68">        }</span>
+<span class="nc" id="L69">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

@@ -1,4 +1,5 @@
 # AI-Assisted Development — dinosaur-service
+Claude Code
 
 ## ¿Para qué se utilizó la IA?
 
@@ -17,6 +18,7 @@
   interferir con el schema CQRS existente.
 - **ENUM @Enumerated en JPA:** JPA no puede mapear directamente ENUMs PostgreSQL
   personalizados. Se resolvió usando String + columnDefinition.
+- **Mensajeria:** se recomendo directamente a una RabittMQ , se le solicito la implementacion de un patron OUTBOX - EVENT PATTERN
 
 ## Validación del código generado
 

@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: com.froneus.dinosaur.domain.DinosaurTest
+-------------------------------------------------------------------------------
+Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.029 s -- in com.froneus.dinosaur.domain.DinosaurTest
