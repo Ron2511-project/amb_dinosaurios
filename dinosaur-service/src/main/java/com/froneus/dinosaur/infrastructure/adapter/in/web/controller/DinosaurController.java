@@ -1,19 +1,14 @@
 package com.froneus.dinosaur.infrastructure.adapter.in.web.controller;
 
-import com.froneus.dinosaur.domain.exception.DinosaurExtinctException;
 import com.froneus.dinosaur.domain.exception.DinosaurNotFoundException;
-import com.froneus.dinosaur.domain.exception.DuplicateDinosaurNameException;
-import com.froneus.dinosaur.domain.exception.InvalidDinosaurDateException;
 import com.froneus.dinosaur.domain.model.Dinosaur;
 import com.froneus.dinosaur.domain.model.DinosaurReadModel;
-import com.froneus.dinosaur.domain.model.DinosaurStatus;
 import com.froneus.dinosaur.domain.model.PagedResult;
 import com.froneus.dinosaur.domain.port.in.CreateDinosaurUseCase;
 import com.froneus.dinosaur.domain.port.in.DeleteDinosaurUseCase;
 import com.froneus.dinosaur.domain.port.in.GetDinosaurUseCase;
 import com.froneus.dinosaur.domain.port.in.UpdateDinosaurUseCase;
 import com.froneus.dinosaur.domain.port.out.DinosaurIdempotencyPort;
-import com.froneus.dinosaur.domain.port.out.DinosaurRepository;
 import com.froneus.dinosaur.infrastructure.adapter.in.web.dto.*;
 import com.froneus.dinosaur.infrastructure.adapter.in.web.mapper.DinosaurWebMapper;
 import jakarta.validation.Valid;
@@ -48,7 +43,7 @@ public class DinosaurController {
     private final UpdateDinosaurUseCase   updateUseCase;
     private final DeleteDinosaurUseCase   deleteUseCase;
     private final DinosaurIdempotencyPort idempotencyPort;
-    private final DinosaurRepository      repository;
+    //private final DinosaurRepository      repository;  //Esta inyeccion esta mal , se debe mover al caso de uso
     private final DinosaurWebMapper       mapper;
 
     public DinosaurController(CreateDinosaurUseCase createUseCase,
@@ -56,14 +51,14 @@ public class DinosaurController {
                               UpdateDinosaurUseCase updateUseCase,
                               DeleteDinosaurUseCase deleteUseCase,
                               DinosaurIdempotencyPort idempotencyPort,
-                              DinosaurRepository repository,
+   //                           DinosaurRepository repository, //No debe ir aqui
                               DinosaurWebMapper mapper) {
         this.createUseCase   = createUseCase;
         this.getUseCase      = getUseCase;
         this.updateUseCase   = updateUseCase;
         this.deleteUseCase   = deleteUseCase;
         this.idempotencyPort = idempotencyPort;
-        this.repository      = repository;
+        //this.repository      = repository;
         this.mapper          = mapper;
     }
 
@@ -72,7 +67,7 @@ public class DinosaurController {
     // ══════════════════════════════════════════════════════════════════════════
 
     @PostMapping
-    public ResponseEntity<?> create(
+    public ResponseEntity<DinosaurResponse> create(
             @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
             @Valid @RequestBody CreateDinosaurRequest request) {
 
@@ -81,21 +76,32 @@ public class DinosaurController {
             Optional<Long> cached = idempotencyPort.getDinosaurId(idempotencyKey);
             if (cached.isPresent()) {
                 log.info("Idempotency replay — key={}", idempotencyKey);
-                return repository.findById(cached.get())
+            
+            //Esta implementacion es incorrecta
+                /*  return repository.findById(cached.get())
                         .map(d -> ResponseEntity.status(HttpStatus.CREATED)
                                 .body((Object) mapper.toResponse(d)))
                         .orElse(ResponseEntity.status(HttpStatus.CREATED).build());
-            }
+            }*/  
+       try {
+            Dinosaur d = getUseCase.getWriteById(cached.get());
+                return ResponseEntity.status(HttpStatus.CREATED)
+                .body(mapper.toResponse(d));
+                     } catch (DinosaurNotFoundException e) {
+                            return ResponseEntity.status(HttpStatus.CREATED).build();
+                        }
         }
+    }
 
-        // Validaciones de negocio
-        if (request.discoveryDate() != null && request.extinctionDate() != null
+        // Validaciones de negocio- esta validacion debe iren caso de uso
+       /*  if (request.discoveryDate() != null && request.extinctionDate() != null
                 && !request.discoveryDate().isBefore(request.extinctionDate()))
             throw new InvalidDinosaurDateException(
                     "Discovery date must be earlier than extinction date");
 
+         // Validaciones de negocio- esta validacion debe iren caso de uso
         if (repository.existsByName(request.name()))
-            throw new DuplicateDinosaurNameException("Dinosaur name already exists");
+            throw new DuplicateDinosaurNameException("Dinosaur name already exists");*/
 
         // Crear → use case emite evento al outbox
         Dinosaur created = createUseCase.execute(mapper.toCommand(request));
@@ -114,7 +120,7 @@ public class DinosaurController {
     // ══════════════════════════════════════════════════════════════════════════
 
     @GetMapping
-    public ResponseEntity<?> getAll(
+    public ResponseEntity<PagedResponse<DinosaurReadResponse>> getAll(
             @RequestParam(defaultValue = "1")  int page,
             @RequestParam(defaultValue = "10") int pageSize) {
 
@@ -127,7 +133,7 @@ public class DinosaurController {
     // ══════════════════════════════════════════════════════════════════════════
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> getById(@PathVariable Long id) {
+    public ResponseEntity<DinosaurReadResponse> getById(@PathVariable Long id) {
         DinosaurReadModel model = getUseCase.getById(id);
         return ResponseEntity.ok(mapper.toReadResponse(model));
     }
@@ -137,10 +143,10 @@ public class DinosaurController {
     // ══════════════════════════════════════════════════════════════════════════
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> update(@PathVariable Long id,
+    public ResponseEntity<DinosaurResponse> update(@PathVariable Long id,
                                     @RequestBody UpdateDinosaurRequest request) {
-        // Validaciones de negocio
-        Dinosaur existing = repository.findById(id)
+        // Validaciones de negocio- Esto va al caso de usp
+       /*  Dinosaur existing = repository.findById(id)
                 .orElseThrow(() -> new DinosaurNotFoundException("Dinosaur not found"));
 
         if (existing.getStatus() == DinosaurStatus.EXTINCT)
@@ -153,7 +159,7 @@ public class DinosaurController {
         if (request.discoveryDate() != null && request.extinctionDate() != null
                 && !request.discoveryDate().isBefore(request.extinctionDate()))
             throw new InvalidDinosaurDateException(
-                    "Discovery date must be earlier than extinction date");
+                    "Discovery date must be earlier than extinction date");*/
 
         // Actualizar → use case emite evento si cambia el status
         Dinosaur updated = updateUseCase.execute(mapper.toCommand(id, request));
@@ -167,9 +173,10 @@ public class DinosaurController {
     // ══════════════════════════════════════════════════════════════════════════
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> delete(@PathVariable Long id) {
-        repository.findById(id)
-                .orElseThrow(() -> new DinosaurNotFoundException("Dinosaur not found"));
+    public ResponseEntity<DeletedResponse> delete(@PathVariable Long id) {
+        // Validaciones de negocio- esta validacion debe iren caso de uso
+       /*  repository.findById(id)
+                .orElseThrow(() -> new DinosaurNotFoundException("Dinosaur not found"));*/
 
         // Eliminar → use case emite evento DELETED
         deleteUseCase.execute(id);
