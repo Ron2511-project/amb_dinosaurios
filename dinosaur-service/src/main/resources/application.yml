@@ -86,6 +86,10 @@ management:
   endpoint:
     health:
       show-details: always
+      show-components: always
+  health:
+    circuitbreakers:
+      enabled: true
 
 # ── Logging explícito para ver el flujo completo ──────────────────────────────
 logging:

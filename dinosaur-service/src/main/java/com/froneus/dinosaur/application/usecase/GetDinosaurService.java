@@ -5,6 +5,7 @@ import com.froneus.dinosaur.domain.model.DinosaurReadModel;
 import com.froneus.dinosaur.domain.model.PagedResult;
 import com.froneus.dinosaur.domain.port.in.GetDinosaurUseCase;
 import com.froneus.dinosaur.domain.port.out.DinosaurRepository;
+import com.froneus.dinosaur.domain.model.Dinosaur;
 
 /**
  * Caso de uso de consulta — lee desde dinosaurs_read (Query Side CQRS).
@@ -28,4 +29,11 @@ public class GetDinosaurService implements GetDinosaurUseCase {
     public PagedResult<DinosaurReadModel> getAll(int page, int pageSize) {
         return repository.findAllActive(page, pageSize);
     }
+    
+    //Implementación de nuevo metodo
+    @Override
+    public Dinosaur getWriteById(Long id) {
+    return repository.findById(id)
+            .orElseThrow(() -> new DinosaurNotFoundException("Dinosaur not found"));
+}
 }

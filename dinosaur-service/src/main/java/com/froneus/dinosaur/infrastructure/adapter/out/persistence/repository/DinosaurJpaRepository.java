@@ -64,7 +64,7 @@ public interface DinosaurJpaRepository extends JpaRepository<DinosaurEntity, Lon
     @Transactional
     @Query(value = """
             UPDATE dinosaurs_write
-            SET status=CAST('INACTIVE' AS dinosaur_status), updated_at=NOW()
+            SET status=CAST('ENDANGERED' AS dinosaur_status), updated_at=NOW()
             WHERE status=CAST('ALIVE' AS dinosaur_status)
               AND deleted_at IS NULL
               AND extinction_date <= NOW() + INTERVAL '24 hours'

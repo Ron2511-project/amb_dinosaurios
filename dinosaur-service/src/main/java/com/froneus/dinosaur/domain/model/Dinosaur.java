@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
  * Adaptada a la BD existente con arquitectura CQRS:
  *   - Tabla:  dinosaurs_write (Command Side)
  *   - ID:     BIGSERIAL autoincremental generado por PostgreSQL (Long)
- *   - Status: ALIVE | ENDANGERED (→ INACTIVE en BD) | EXTINCT
+ *   - Status: ALIVE | ENDANGERED | EXTINCT
  */
 public class Dinosaur {
 

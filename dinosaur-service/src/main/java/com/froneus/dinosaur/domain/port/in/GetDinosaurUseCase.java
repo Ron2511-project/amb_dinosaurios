@@ -1,5 +1,6 @@
 package com.froneus.dinosaur.domain.port.in;
 
+import com.froneus.dinosaur.domain.model.Dinosaur;
 import com.froneus.dinosaur.domain.model.DinosaurReadModel;
 import com.froneus.dinosaur.domain.model.PagedResult;
 
@@ -10,4 +11,5 @@ import com.froneus.dinosaur.domain.model.PagedResult;
 public interface GetDinosaurUseCase {
     DinosaurReadModel        getById(Long id);
     PagedResult<DinosaurReadModel> getAll(int page, int pageSize);
+    Dinosaur getWriteById(Long id); //Nuevo Metodo para 
 }
