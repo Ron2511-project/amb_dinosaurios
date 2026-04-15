@@ -33,6 +33,7 @@ public class DinosaurPostgresAdapter implements DinosaurRepository {
     private final DinosaurPersistenceMapper mapper;
     private final CircuitBreaker            cb;
 
+   
     public DinosaurPostgresAdapter(DinosaurJpaRepository writeRepo,
                                    DinosaurReadJpaRepository readRepo,
                                    DinosaurPersistenceMapper mapper,
@@ -43,6 +44,7 @@ public class DinosaurPostgresAdapter implements DinosaurRepository {
         this.cb        = circuitBreakerRegistry.circuitBreaker(CB_NAME);
     }
 
+   
     private <T> T execute(Supplier<T> supplier) {
         return CircuitBreaker.decorateSupplier(cb, supplier).get();
     }
