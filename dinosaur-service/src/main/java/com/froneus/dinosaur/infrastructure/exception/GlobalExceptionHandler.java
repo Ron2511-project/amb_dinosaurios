@@ -1,6 +1,7 @@
 package com.froneus.dinosaur.infrastructure.exception;
 
 import com.froneus.dinosaur.domain.exception.*;
+import com.froneus.dinosaur.domain.exception.ServiceUnavailableException;
 import com.froneus.dinosaur.infrastructure.adapter.in.web.dto.ErrorResponse;
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import org.slf4j.Logger;
@@ -58,6 +59,12 @@ public class GlobalExceptionHandler {
         log.warn("Circuit Breaker OPEN: {}", ex.getMessage());
         return error(HttpStatus.SERVICE_UNAVAILABLE,
                 "Service temporarily unavailable. Please try again.");
+    }
+
+    @ExceptionHandler(ServiceUnavailableException.class)
+    public ResponseEntity<ErrorResponse> handleServiceUnavailable(ServiceUnavailableException ex) {
+        log.warn("Service unavailable via CB fallback: {}", ex.getMessage());
+        return error(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage());
     }
 
     // ── 500 ───────────────────────────────────────────────────────────────────

@@ -204,7 +204,7 @@ GET  /v1/dinosaur ← dinosaurs_read   (Query Side — lectura optimizada)
 | Java (dominio) | PostgreSQL ENUM `dinosaur_status` |
 |----------------|-----------------------------------|
 | `ALIVE`        | `ALIVE`                           |
-| `ENDANGERED`   | `ENDANGERED`                      |
+| `ENDANGERED`   | `INACTIVE`                        |
 | `EXTINCT`      | `EXTINCT`                         |
 
 ---

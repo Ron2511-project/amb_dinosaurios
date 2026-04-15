@@ -18,7 +18,7 @@ Crear un ENUM llamado dinosaur_status con los siguientes valores:
 - DISCOVERED
 - ALIVE
 - EXTINCT
-- ENDANGERED
+- INACTIVE
 - ARCHIVED
 
 ---

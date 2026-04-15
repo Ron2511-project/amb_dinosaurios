@@ -14,7 +14,7 @@ import java.time.ZoneOffset;
 /**
  * Mapper entre entidades JPA y entidades de dominio.
  *
- * Status mapping:
+ * Status mapping directo — dominio y BD usan los mismos valores:
  *   Dominio ALIVE       → BD "ALIVE"
  *   Dominio ENDANGERED  → BD "ENDANGERED"
  *   Dominio EXTINCT     → BD "EXTINCT"
@@ -74,8 +74,8 @@ public class DinosaurPersistenceMapper {
         if (dbStatus == null) return DinosaurStatus.ALIVE;
         return switch (dbStatus) {
             case "ENDANGERED" -> DinosaurStatus.ENDANGERED;
-            case "EXTINCT"  -> DinosaurStatus.EXTINCT;
-            default         -> DinosaurStatus.ALIVE;
+            case "EXTINCT"    -> DinosaurStatus.EXTINCT;
+            default           -> DinosaurStatus.ALIVE;
         };
     }
 }

@@ -62,7 +62,7 @@ com.froneus.dinosaur/
 | Java (dominio) | PostgreSQL ENUM |
 |----------------|-----------------|
 | `ALIVE`        | `ALIVE`         |
-| `ENDANGERED`   | `ENDANGERED`    |
+| `ENDANGERED`   | `INACTIVE`      |
 | `EXTINCT`      | `EXTINCT`       |
 
 ---
