@@ -262,6 +262,7 @@ docker compose logs -f dinosaur-service
 docker exec -it froneus_postgres psql -U froneus -d froneus_db \
   -c "SELECT id, name, status FROM dinosaurs_write ORDER BY id DESC LIMIT 10;"
 
+
 # Ver read model (CQRS)
 docker exec -it froneus_postgres psql -U froneus -d froneus_db \
   -c "SELECT id, name, status, is_extinct, dinosaur_summary FROM dinosaurs_read;"
