@@ -8,11 +8,11 @@ con puertos de entrada/salida, adaptadores REST, PostgreSQL y Redis para idempot
 ## 2. Adaptación al schema CQRS existente
 Prompt: "El proyecto ya tiene un schema PostgreSQL con arquitectura CQRS:
 tablas dinosaurs_write y dinosaurs_read sincronizadas por trigger.
-ID es BIGSERIAL (Long), ENUM dinosaur_status tiene ALIVE/EXTINCT/INACTIVE.
+ID es BIGSERIAL (Long), ENUM dinosaur_status tiene ALIVE/EXTINCT/ENDANGERED.
 Adapta el microservicio Java para conectarse a esa BD sin modificar el schema."
 
 ## 3. Mapeo de estados dominio ↔ BD
-Prompt: "El dominio Java usa ENDANGERED pero la BD usa INACTIVE.
+Prompt: "El dominio Java usa ENDANGERED y la BD también usa ENDANGERED.
 Implementa el mapeo en la capa de persistencia sin exponer esta diferencia al dominio."
 
 ## 4. Docker multi-stage para Apple Silicon (arm64)

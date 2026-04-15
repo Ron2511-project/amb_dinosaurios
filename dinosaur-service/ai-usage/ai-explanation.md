@@ -22,7 +22,7 @@ Claude Code
 
 ## Validación del código generado
 
-- Revisión manual de cada mapper (especialmente status ENDANGERED↔INACTIVE)
+- Revisión manual de cada mapper (especialmente status ENDANGERED)
 - Verificación de que JPA usa `@GeneratedValue(IDENTITY)` para respetar BIGSERIAL
 - Confirmación de que `ddl-auto: none` no modifica el schema de producción
 - Tests unitarios ejecutados sin Spring context para validar lógica de dominio pura

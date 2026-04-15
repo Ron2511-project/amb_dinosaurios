@@ -4,7 +4,7 @@
 -- Descripción: Inserta 20 registros de prueba en dinosaurs_write.
 --              El trigger sync_dinosaurs_read los propaga automáticamente
 --              a dinosaurs_read con los campos derivados calculados.
--- Estados válidos: ALIVE | EXTINCT | INACTIVE
+-- Estados válidos: ALIVE | EXTINCT | ENDANGERED
 -- =============================================================================
 
 INSERT INTO dinosaurs_write (name, species, discovery_date, extinction_date, status) VALUES
@@ -19,13 +19,13 @@ INSERT INTO dinosaurs_write (name, species, discovery_date, extinction_date, sta
     ('Diplodocus',             'Sauropoda',             '1877-06-03T00:00:00Z', '2020-08-19T23:59:59Z', 'EXTINCT'),
     ('Parasaurolophus',        'Hadrosauridae',         '1922-10-27T00:00:00Z', '2025-10-27T00:00:00Z', 'ALIVE'),
     ('Allosaurus',             'Allosauridae',          '1877-12-05T00:00:00Z', '2023-09-01T00:00:00Z', 'EXTINCT'),
-    ('Iguanodon',              'Ornithopoda',           '1822-02-14T00:00:00Z', '2026-02-14T00:00:00Z', 'INACTIVE'),
+    ('Iguanodon',              'Ornithopoda',           '1822-02-14T00:00:00Z', '2026-02-14T00:00:00Z', 'ENDANGERED'),
     ('Carnotaurus',            'Abelisauridae',         '1984-06-21T00:00:00Z', '2027-06-21T00:00:00Z', 'ALIVE'),
     ('Pachycephalosaurus',     'Marginocephalia',       '1931-08-08T00:00:00Z', '2022-05-17T23:59:59Z', 'EXTINCT'),
-    ('Therizinosaurus',        'Therizinosauria',       '1954-03-12T00:00:00Z', '2025-03-12T00:00:00Z', 'INACTIVE'),
+    ('Therizinosaurus',        'Therizinosauria',       '1954-03-12T00:00:00Z', '2025-03-12T00:00:00Z', 'ENDANGERED'),
     ('Mosasaurus',             'Mosasauridae',          '1764-09-29T00:00:00Z', '2021-07-04T23:59:59Z', 'EXTINCT'),
     ('Gallimimus',             'Ornithomimidae',        '1972-11-18T00:00:00Z', '2026-11-18T00:00:00Z', 'ALIVE'),
-    ('Baryonyx',               'Spinosauridae',         '1983-01-30T00:00:00Z', '2025-01-30T00:00:00Z', 'INACTIVE'),
+    ('Baryonyx',               'Spinosauridae',         '1983-01-30T00:00:00Z', '2025-01-30T00:00:00Z', 'ENDANGERED'),
     ('Archaeopteryx',          'Avialae',               '1861-07-22T00:00:00Z', '2020-12-31T23:59:59Z', 'EXTINCT'),
     ('Giganotosaurus',         'Carcharodontosauridae', '1993-09-09T00:00:00Z', '2027-09-09T00:00:00Z', 'ALIVE');
 

@@ -6,7 +6,7 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'dinosaur_status') THEN
-        CREATE TYPE dinosaur_status AS ENUM ('ALIVE', 'EXTINCT', 'INACTIVE');
+        CREATE TYPE dinosaur_status AS ENUM ('ALIVE', 'EXTINCT', 'ENDANGERED');
     END IF;
 END $$;
 
