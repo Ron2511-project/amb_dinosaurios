@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS dinosaurs_write (
 COMMENT ON TABLE  dinosaurs_write            IS 'Write model (Command Side CQRS). Fuente de verdad del dominio.';
 COMMENT ON COLUMN dinosaurs_write.id         IS 'ID autoincremental (BIGSERIAL). Generado automáticamente por PostgreSQL.';
 COMMENT ON COLUMN dinosaurs_write.deleted_at IS 'Soft delete. Si no es NULL el registro está lógicamente eliminado.';
-COMMENT ON COLUMN dinosaurs_write.status     IS 'Estado del dinosaurio: ALIVE | EXTINCT | INACTIVE.';
+COMMENT ON COLUMN dinosaurs_write.status     IS 'Estado del dinosaurio: ALIVE | EXTINCT | ENDANGERED.';
 
 -- -----------------------------------------------------------------------------
 -- ÍNDICES — dinosaurs_write

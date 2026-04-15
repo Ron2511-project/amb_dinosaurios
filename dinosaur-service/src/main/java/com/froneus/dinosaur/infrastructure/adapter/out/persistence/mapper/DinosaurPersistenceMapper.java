@@ -16,7 +16,7 @@ import java.time.ZoneOffset;
  *
  * Status mapping:
  *   Dominio ALIVE       → BD "ALIVE"
- *   Dominio ENDANGERED  → BD "INACTIVE"
+ *   Dominio ENDANGERED  → BD "ENDANGERED"
  *   Dominio EXTINCT     → BD "EXTINCT"
  */
 @Component
@@ -59,7 +59,7 @@ public class DinosaurPersistenceMapper {
         if (status == null) return "ALIVE";
         return switch (status) {
             case ALIVE      -> "ALIVE";
-            case ENDANGERED -> "INACTIVE";
+            case ENDANGERED -> "ENDANGERED";
             case EXTINCT    -> "EXTINCT";
         };
     }
@@ -73,7 +73,7 @@ public class DinosaurPersistenceMapper {
     private DinosaurStatus toDomainStatus(String dbStatus) {
         if (dbStatus == null) return DinosaurStatus.ALIVE;
         return switch (dbStatus) {
-            case "INACTIVE" -> DinosaurStatus.ENDANGERED;
+            case "ENDANGERED" -> DinosaurStatus.ENDANGERED;
             case "EXTINCT"  -> DinosaurStatus.EXTINCT;
             default         -> DinosaurStatus.ALIVE;
         };

@@ -22,7 +22,7 @@ BEGIN
         CREATE TYPE dinosaur_status AS ENUM (
             'ALIVE',
             'EXTINCT',
-            'INACTIVE'
+            'ENDANGERED'
         );
         RAISE NOTICE 'ENUM dinosaur_status creado correctamente.';
     ELSE

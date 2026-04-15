@@ -22,7 +22,7 @@ public interface DinosaurRepository {
     void               softDelete(Long id);
 
     // ── Scheduler ─────────────────────────────────────────────────────────────
-    /** ALIVE → INACTIVE. Retorna los dinosaurios afectados para emitir eventos. */
+    /** ALIVE → ENDANGERED. Retorna los dinosaurios afectados para emitir eventos. */
     List<Dinosaur> updateAliveToEndangeredAndReturn();
 
     /** ANY → EXTINCT. Retorna los dinosaurios afectados para emitir eventos. */

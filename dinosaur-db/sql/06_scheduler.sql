@@ -4,7 +4,7 @@
 -- Requiere: extensión pg_cron (incluida en postgres:16 con configuración)
 --
 -- Reglas del challenge (punto II):
---   - 24hs antes del extinctionDate: ALIVE → ENDANGERED (INACTIVE en BD)
+--   - 24hs antes del extinctionDate: ALIVE → ENDANGERED
 --   - Al llegar extinctionDate:      ANY   → EXTINCT
 --   - Corre cada 10 minutos
 -- =============================================================================
@@ -42,9 +42,9 @@ BEGIN
 
     GET DIAGNOSTICS extinct_count = ROW_COUNT;
 
-    -- Paso 2: ALIVE → INACTIVE/ENDANGERED (≤ 24hs para extinguirse)
+    -- Paso 2: ALIVE → ENDANGERED (≤ 24hs para extinguirse)
     UPDATE dinosaurs_write
-    SET    status     = CAST('INACTIVE' AS dinosaur_status),
+    SET    status     = CAST('ENDANGERED' AS dinosaur_status),
            updated_at = NOW()
     WHERE  status     = CAST('ALIVE' AS dinosaur_status)
       AND  deleted_at  IS NULL
